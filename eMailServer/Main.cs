@@ -30,7 +30,7 @@ namespace eMailServer {
 			try {
 				listener.Start();
 			} catch(Exception e) {
-				logger.Error("HttpListener: " + e.Message);
+				logger.Error("TcpListener: " + e.Message);
 				LogManager.Configuration = null;
 				return;
 			}
