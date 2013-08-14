@@ -41,6 +41,12 @@
     <Reference Include="CommandLine">
       <HintPath>CommandLine.dll</HintPath>
     </Reference>
+    <Reference Include="MongoDB.Driver">
+      <HintPath>MongoDB-Driver\MongoDB.Driver.dll</HintPath>
+    </Reference>
+    <Reference Include="MongoDB.Bson">
+      <HintPath>MongoDB-Driver\MongoDB.Bson.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Main.cs" />
@@ -48,6 +54,7 @@
     <Compile Include="Options.cs" />
     <Compile Include="LimitedConcurrencyLevelTaskScheduler.cs" />
     <Compile Include="RequestHandler.cs" />
+    <Compile Include="eMail.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -56,5 +63,12 @@
     </None>
     <None Include="NLog.dll" />
     <None Include="CommandLine.dll" />
+    <None Include="MongoDB-Driver\MongoDB.Bson.dll" />
+    <None Include="MongoDB-Driver\MongoDB.Bson.xml" />
+    <None Include="MongoDB-Driver\MongoDB.Driver.dll" />
+    <None Include="MongoDB-Driver\MongoDB.Driver.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="MongoDB-Driver\" />
   </ItemGroup>
 </Project>

@@ -23,6 +23,8 @@ namespace eMailServer {
 
 			this.SendMessage("service ready", 220);
 
+			eMail mail = new eMail();
+
 			Byte[] bytes = new Byte[1024];
 			int i = 0;
 			string incomingMessage = String.Empty;
@@ -38,6 +40,7 @@ namespace eMailServer {
 						logger.Info(String.Format("Received: \"{0}\"", incomingMessage));
 
 						if (incomingMessage.StartsWith("HELO ")) {
+							mail.SetClientName(incomingMessage.Substring(5));
 							this.SendMessage("OK", 250);
 						} else if (incomingMessage.StartsWith("MAIL FROM:")) {
 							this.SendMessage("OK", 250);
@@ -54,6 +57,11 @@ namespace eMailServer {
 							mailMessage = mailMessage.Trim();
 							logger.Info("eMail data received: " + mailMessage);
 							dataStarted = false;
+
+							if (mail.IsValid) {
+								mail.SaveToMongoDB();
+							}
+
 							this.SendMessage("OK", 250);
 						} else {
 							mailMessage += incomingMessage;
