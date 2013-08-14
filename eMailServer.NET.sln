@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "eMailServer", "eMailServer\eMailServer.csproj", "{652F6A4A-FDAB-4C99-A9A4-95E19042173A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{652F6A4A-FDAB-4C99-A9A4-95E19042173A}.Debug|x86.ActiveCfg = Debug|x86
+		{652F6A4A-FDAB-4C99-A9A4-95E19042173A}.Debug|x86.Build.0 = Debug|x86
+		{652F6A4A-FDAB-4C99-A9A4-95E19042173A}.Release|x86.ActiveCfg = Release|x86
+		{652F6A4A-FDAB-4C99-A9A4-95E19042173A}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = eMailServer\eMailServer.csproj
+	EndGlobalSection
+EndGlobal
