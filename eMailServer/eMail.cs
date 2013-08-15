@@ -4,9 +4,12 @@ using System.Text;
 using System.Text.RegularExpressions;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using NLog;
 
 namespace eMailServer {
 	public class eMail {
+		private static Logger logger = LogManager.GetCurrentClassLogger();
+
 		private string _clientName = String.Empty;
 		private string _from = String.Empty;
 		private List<string> _recipients = new List<string>();
@@ -37,12 +40,38 @@ namespace eMailServer {
 		}
 
 		public void SetFrom(string mailFrom) {
-			mailFrom = mailFrom.Trim();
-			if (mailFrom == String.Empty) {
-				return;
+			string parsedMailAddress = this.ParseMailAddress(mailFrom);
+			if (parsedMailAddress != null) {
+				this._from = parsedMailAddress;
+			}
+		}
+
+		public void SetRecipient(string mailRecipient) {
+			string parsedMailAddress = this.ParseMailAddress(mailRecipient);
+			if (parsedMailAddress != null) {
+				this._recipients.Add(parsedMailAddress);
+			}
+		}
+
+		public void SetMessage(string message) {
+			this._message = message;
+		}
+
+		private string ParseMailAddress(string mailAddress) {
+			mailAddress = mailAddress.Trim();
+			if (mailAddress == String.Empty) {
+				return null;
 			}
 
+			Match eMailFieldMatch = Regex.Match(mailAddress, "<([^>]+)>", RegexOptions.Compiled);
+			if (eMailFieldMatch.Success) {
+				Match eMailMatch = Regex.Match(eMailFieldMatch.Groups[1].Value.Trim(), "^([^@]+@[^\\.]+\\.[a-zA-Z]+)$", RegexOptions.Compiled);
+				if (eMailMatch.Success) {
+					return eMailMatch.Groups[1].Value;
+				}
+			}
 
+			return null;
 		}
 
 		public void SaveToMongoDB() {
@@ -50,10 +79,17 @@ namespace eMailServer {
 				return;
 			}
 
+			logger.Info("Saving received eMail to Database.");
+
 			string connectionString = "mongodb://localhost";
 			MongoClient mongoClient = new MongoClient(connectionString);
 			MongoServer mongoServer = mongoClient.GetServer();
 			MongoDatabase mongoDatabase = mongoServer.GetDatabase("email");
+			MongoCollection mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
+
+			eMailEntity mailEntity = new eMailEntity {ClientName = this.ClientName, From = this.From, Recipients = this.Recipients, Message = this.Message};
+			WriteConcernResult result = mongoCollection.Save(mailEntity, WriteConcern.Acknowledged);
+			logger.Info("WriteConcernResult: " + result.Ok);
 		}
 	}
 }

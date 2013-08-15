@@ -9,16 +9,16 @@ using System.Text.RegularExpressions;
 using NLog;
 
 namespace eMailServer {
-	public class RequestHandler {
+	public class SmtpRequestHandler {
 		private static Logger logger = LogManager.GetCurrentClassLogger();
 
 		private NetworkStream _stream = null;
 
-		public RequestHandler() {
+		public SmtpRequestHandler() {
 
 		}
 
-		public RequestHandler(TcpClient client) {
+		public SmtpRequestHandler(TcpClient client) {
 			this._stream = client.GetStream();
 
 			this.SendMessage("service ready", 220);
@@ -43,8 +43,10 @@ namespace eMailServer {
 							mail.SetClientName(incomingMessage.Substring(5));
 							this.SendMessage("OK", 250);
 						} else if (incomingMessage.StartsWith("MAIL FROM:")) {
+							mail.SetFrom(incomingMessage.Substring(10));
 							this.SendMessage("OK", 250);
 						} else if (incomingMessage.StartsWith("RCPT TO:")) {
+							mail.SetRecipient(incomingMessage.Substring(8));
 							this.SendMessage("OK", 250);
 						} else if (incomingMessage == "DATA") {
 							this.SendMessage("start mail input", 354);
@@ -58,6 +60,7 @@ namespace eMailServer {
 							logger.Info("eMail data received: " + mailMessage);
 							dataStarted = false;
 
+							mail.SetMessage(mailMessage);
 							if (mail.IsValid) {
 								mail.SaveToMongoDB();
 							}

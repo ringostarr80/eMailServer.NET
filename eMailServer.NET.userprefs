@@ -1,15 +1,19 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="eMailServer/Main.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="eMailServer/eMail.cs">
     <Files>
-      <File FileName="eMailServer/Main.cs" Line="11" Column="1" />
-      <File FileName="eMailServer/RequestHandler.cs" Line="39" Column="7" />
-      <File FileName="eMailServer/Options.cs" Line="6" Column="24" />
+      <File FileName="eMailServer/Main.cs" Line="8" Column="1" />
+      <File FileName="eMailServer/RequestHandler.cs" Line="43" Column="57" />
+      <File FileName="eMailServer/eMail.cs" Line="13" Column="42" />
+      <File FileName="eMailServer/Options.cs" Line="7" Column="21" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
         <State expanded="True" selected="True">
-          <Node name="eMailServer" expanded="True" />
+          <Node name="eMailServer" expanded="True">
+            <Node name="References" expanded="True" />
+            <Node name="MongoDB-Driver" expanded="True" />
+          </Node>
         </State>
       </Pad>
       <Pad Id="ClassPad">

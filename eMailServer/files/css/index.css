@@ -1,0 +1,61 @@
+body {
+	font-family: "Noto Serif", serif;
+	margin: 0;
+	padding: 0;
+	width: 100%;
+	height: 100%;
+}
+
+header {
+	background-color: blue;
+	color: white;
+	width: 100%;
+	height: 50px;
+}
+header section {
+	cursor: pointer;
+	float: left;
+	font-weight: bold;
+	height: 35px;
+	padding-top: 15px;
+	padding-left: 10px;
+	padding-right: 10px;
+}
+header nav {
+	height: 100%;
+}
+header nav ul {
+	display: block;
+	list-style-type: none;
+	list-style-position: outside;
+	margin: 0;
+	padding: 0;
+	height: 100%;
+}
+header nav ul li {
+	float: left;
+	padding-top: 15px;
+	padding-left: 10px;
+	padding-right: 10px;
+	height: 35px;
+}
+header nav ul li:hover {
+	background-color: white;
+	color: blue;
+	cursor: pointer;
+}
+header nav ul li.active {
+	background-color: white;
+	color: blue;
+	cursor: default;
+}
+
+#content {
+	width: 100%;
+	height: 100%;
+}
+.content {
+	display: none;
+	width: 100%;
+	height: 100%;
+}

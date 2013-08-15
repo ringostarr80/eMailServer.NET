@@ -47,14 +47,17 @@
     <Reference Include="MongoDB.Bson">
       <HintPath>MongoDB-Driver\MongoDB.Bson.dll</HintPath>
     </Reference>
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Main.cs" />
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="LimitedConcurrencyLevelTaskScheduler.cs" />
-    <Compile Include="RequestHandler.cs" />
     <Compile Include="eMail.cs" />
+    <Compile Include="eMailEntity.cs" />
+    <Compile Include="HttpRequestHandler.cs" />
+    <Compile Include="SmtpRequestHandler.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -70,5 +73,14 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="MongoDB-Driver\" />
+    <Folder Include="files\" />
+    <Folder Include="files\css\" />
+    <Folder Include="files\js\" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="files\index.html" />
+    <EmbeddedResource Include="files\css\index.css" />
+    <EmbeddedResource Include="files\js\jquery-2.0.2.min.js" />
+    <EmbeddedResource Include="files\js\index.js" />
   </ItemGroup>
 </Project>

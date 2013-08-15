@@ -4,8 +4,11 @@ using CommandLine.Text;
 
 namespace eMailServer {
 	public class Options {
-		[Option('p', "port", DefaultValue = 25, Required = false, HelpText = "The SMTP-Port to listen.")]
-		public int Port { get; set; }
+		[Option('h', "http-port", DefaultValue = 80, Required = false, HelpText = "The HTTP-Port to listen.")]
+		public int HttpPort { get; set; }
+
+		[Option('s', "smtp-port", DefaultValue = 25, Required = false, HelpText = "The SMTP-Port to listen.")]
+		public int SmtpPort { get; set; }
 
 		public Options() {
 
