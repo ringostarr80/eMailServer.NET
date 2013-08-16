@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>.NET eMailServer login</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+		<link href="http://fonts.googleapis.com/css?family=Noto+Serif" rel="stylesheet" type="text/css"/>
+		<link href="/files/css/index.css" type="text/css" rel="stylesheet"/>
+	</head>
+	<body>
+		<header>
+			<section>.NET eMailServer</section>
+		</header>
+		<section id="login">
+			<form action="/login/" method="post" enctype="application/x-www-form-urlencoded">
+				<table class="center">
+					<thead>
+						<tr>
+							<th colspan="2">Login</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>Benutzername:</td>
+							<td><input type="text" name="email_username"/></td>
+						</tr>
+						<tr>
+							<td>Password:</td>
+							<td><input type="password" name="email_password"/></td>
+						</tr>
+					</tbody>
+					<tfoot>
+						<tr>
+							<td colspan="2" class="center"><button>login</button></td>
+						</tr>
+					</tfoot>
+				</table>
+				<br />
+				<div style="text-align: center;"><a href="/register/">registrieren!</a></div>
+			</form>
+		</section>
+	</body>
+</html>

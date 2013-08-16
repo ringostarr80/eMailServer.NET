@@ -50,6 +50,8 @@ namespace eMailServer {
 				return;
 			}
 
+			logger.Info("Listening on HTTP-Port " + Options.HttpPort);
+
 			TcpListener smtpListener = new TcpListener(IPAddress.Parse("127.0.0.1"), Options.SmtpPort);
 
 			try {

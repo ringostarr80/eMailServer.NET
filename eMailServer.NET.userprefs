@@ -1,19 +1,29 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="eMailServer/eMail.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="eMailServer/HttpRequestHandler.cs">
     <Files>
-      <File FileName="eMailServer/Main.cs" Line="8" Column="1" />
-      <File FileName="eMailServer/RequestHandler.cs" Line="43" Column="57" />
-      <File FileName="eMailServer/eMail.cs" Line="13" Column="42" />
-      <File FileName="eMailServer/Options.cs" Line="7" Column="21" />
+      <File FileName="eMailServer/Main.cs" Line="12" Column="1" />
+      <File FileName="eMailServer/SmtpRequestHandler.cs" Line="20" Column="3" />
+      <File FileName="eMailServer/eMail.cs" Line="92" Column="4" />
+      <File FileName="eMailServer/files/index.html" Line="6" Column="100" />
+      <File FileName="eMailServer/files/login.html" Line="20" Column="12" />
+      <File FileName="eMailServer/files/js/index.js" Line="21" Column="4" />
+      <File FileName="eMailServer/files/css/index.css" Line="69" Column="21" />
+      <File FileName="eMailServer/HttpRequestHandler.cs" Line="191" Column="31" />
+      <File FileName="eMailServer/User.cs" Line="25" Column="25" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
-        <State expanded="True" selected="True">
+        <State expanded="True">
           <Node name="eMailServer" expanded="True">
             <Node name="References" expanded="True" />
-            <Node name="MongoDB-Driver" expanded="True" />
+            <Node name="files" expanded="True">
+              <Node name="css" expanded="True" />
+              <Node name="js" expanded="True" />
+            </Node>
+            <Node name="HttpRequestHandler.cs" selected="True" />
           </Node>
+          <Node name="HttpPostRequest" expanded="True" />
         </State>
       </Pad>
       <Pad Id="ClassPad">

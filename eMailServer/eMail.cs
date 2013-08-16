@@ -15,6 +15,8 @@ namespace eMailServer {
 		private List<string> _recipients = new List<string>();
 		private string _message = String.Empty;
 
+		private MongoServer _mongoServer = null;
+
 		public string ClientName { get { return this._clientName; } }
 		public string From { get { return this._from; } }
 		public List<string> Recipients { get { return this._recipients; } }
@@ -30,7 +32,7 @@ namespace eMailServer {
 		}
 
 		public eMail() {
-
+			this._mongoServer = MyMongoDB.GetServer();
 		}
 
 		public void SetClientName(string clientName) {
@@ -81,14 +83,12 @@ namespace eMailServer {
 
 			logger.Info("Saving received eMail to Database.");
 
-			string connectionString = "mongodb://localhost";
-			MongoClient mongoClient = new MongoClient(connectionString);
-			MongoServer mongoServer = mongoClient.GetServer();
-			MongoDatabase mongoDatabase = mongoServer.GetDatabase("email");
+			MongoDatabase mongoDatabase = this._mongoServer.GetDatabase("email");
 			MongoCollection mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
 
 			eMailEntity mailEntity = new eMailEntity {ClientName = this.ClientName, From = this.From, Recipients = this.Recipients, Message = this.Message};
 			WriteConcernResult result = mongoCollection.Save(mailEntity, WriteConcern.Acknowledged);
+
 			logger.Info("WriteConcernResult: " + result.Ok);
 		}
 	}

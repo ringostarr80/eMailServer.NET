@@ -13,11 +13,18 @@ namespace eMailServer {
 	public class HttpRequestHandler {
 		private static Logger logger = LogManager.GetCurrentClassLogger();
 
+		private User _user = new User();
 		private XmlDocument _doc;
 		private HttpListenerResponse _response = null;
 		private HttpListenerRequest _request = null;
 		private string _xmlRoot = "email_server";
 
+		private string _defaultAdminUserName = "admin";
+		private string _defaultAdminUserPassword = "email";
+
+		public User User { get { return this._user; } }
+		public string DefaultAdminUserName { get { return this._defaultAdminUserName; } }
+		public string DefaultAdminUserPassword { get { return this._defaultAdminUserPassword; } }
 		public string RequestUrl { get; set; }
 		public string RequestRawUrl { get; set; }
 		public NameValueCollection RequestQueryString { get; set; }
@@ -60,10 +67,22 @@ namespace eMailServer {
 		public HttpRequestHandler(HttpListenerContext context) {
 			this.Request = context.Request;
 			this.Response = context.Response;
-			
+
 			this._doc = new XmlDocument();
 			this._doc.CreateXmlDeclaration("1.0", "utf-8", "yes");
 			this._doc.AppendChild(this._doc.CreateElement(this._xmlRoot));
+
+			this.RefreshUser();
+		}
+
+		private void RefreshUser() {
+			if (!this.User.RefreshByCookies(this.Request.Cookies)) {
+				if (this.Request.Cookies[User.COOKIE_USERNAME] != null && this.Request.Cookies[User.COOKIE_USERNAME].Value == this.DefaultAdminUserName) {
+					if (this.Request.Cookies[User.COOKIE_PASSWORD] != null && this.Request.Cookies[User.COOKIE_PASSWORD].Value == this.DefaultAdminUserPassword) {
+						this._user = new User(this.Request.Cookies[User.COOKIE_USERNAME].Value, this.Request.Cookies[User.COOKIE_PASSWORD].Value, UserAuthorization.Administrator, UserStatus.Active);
+					}
+				}
+			}
 		}
 
 		public void ProcessRequest() {
@@ -137,6 +156,15 @@ namespace eMailServer {
 					case "files":
 						this.OutputFile(this.RequestRawUrl);
 						break;
+					case "login":
+						this.OutputFile("/files/login.html");
+						break;
+					case "logout":
+						this.OutputFile("/files/logout.html");
+						break;
+					case "register":
+						this.OutputFile("/files/register.html");
+						break;
 					case "":
 						this.OutputFile("/files/index.html");
 						break;
@@ -155,7 +183,13 @@ namespace eMailServer {
 
 		private void OutputFile(string file) {
 			logger.Trace("OutputFile(" + file + ")");
-			
+
+			// Sonderbedingungen
+			if (this.Route(file)) {
+				return;
+			}
+
+			// Normale Ausgabe von Dateien
 			this.Response.AddHeader("Last-Modified", eMailServer.StartTime.ToString("R"));
 			
 			string IfNoneMatch = "";
@@ -238,6 +272,86 @@ namespace eMailServer {
 				} finally {
 					this.ResponseOutputStream.Close();
 				}
+			}
+		}
+
+		private bool Route(string file) {
+			bool routed = false;
+
+			switch(file) {
+				case "/files/index.html":
+					if (!this.User.IsLoggedIn) {
+						this.Redirect("/login/");
+						routed = true;
+					}
+					break;
+
+				case "/files/logout.html":
+					Cookie cookieUsername = new Cookie(User.COOKIE_USERNAME, "", "/");
+					cookieUsername.Expired = true;
+					cookieUsername.Expires = DateTime.Now.Subtract(new TimeSpan(1, 0, 0));
+					Cookie cookiePassword = new Cookie(User.COOKIE_PASSWORD, "", "/");
+					cookiePassword.Expired = true;
+					cookiePassword.Expires = DateTime.Now.Subtract(new TimeSpan(1, 0, 0));
+					this.Response.SetCookie(cookieUsername);
+					this.Response.SetCookie(cookiePassword);
+					this.Redirect("/");
+					routed = true;
+					break;
+				
+				case "/files/login.html":
+					if (this.Request.HttpMethod == "POST") {
+						using(HttpPostRequest.HttpPostRequest postRequest = new HttpPostRequest.HttpPostRequest(this.Request)) {
+							if (postRequest.Parameters[User.COOKIE_USERNAME] != null && postRequest.Parameters[User.COOKIE_PASSWORD] != null) {
+								User user = new User();
+								if (user.RefreshByUsernamePassword(postRequest.Parameters[User.COOKIE_USERNAME], postRequest.Parameters[User.COOKIE_PASSWORD])) {
+									this.Response.SetCookie(new Cookie(User.COOKIE_USERNAME, user.Username, "/"));
+									this.Response.SetCookie(new Cookie(User.COOKIE_PASSWORD, user.Password, "/"));
+									this.Redirect("/");
+									routed = true;
+								} else {
+									if (postRequest.Parameters[User.COOKIE_USERNAME] == this.DefaultAdminUserName && postRequest.Parameters[User.COOKIE_PASSWORD] == this.DefaultAdminUserPassword) {
+										user = new User(postRequest.Parameters[User.COOKIE_USERNAME], postRequest.Parameters[User.COOKIE_PASSWORD], UserAuthorization.Administrator, UserStatus.Active);
+										this.Response.SetCookie(new Cookie(User.COOKIE_USERNAME, user.Username, "/"));
+										this.Response.SetCookie(new Cookie(User.COOKIE_PASSWORD, user.Password, "/"));
+										this.Redirect("/");
+										routed = true;
+									}
+								}
+							}
+						}
+					}
+					break;
+				
+				case "/files/register.html":
+					if (this.Request.HttpMethod == "POST") {
+						using(HttpPostRequest.HttpPostRequest postRequest = new HttpPostRequest.HttpPostRequest(this.Request)) {
+							if (postRequest.Parameters[User.COOKIE_USERNAME] != null && postRequest.Parameters[User.COOKIE_PASSWORD] != null && postRequest.Parameters["email_address"] != null) {
+								if (!User.NameExists(postRequest.Parameters[User.COOKIE_USERNAME])) {
+									if (!User.EMailExists(postRequest.Parameters["email_address"])) {
+										User newUser = new User(postRequest.Parameters[User.COOKIE_USERNAME], postRequest.Parameters[User.COOKIE_PASSWORD], postRequest.Parameters["email_address"]);
+										newUser.Add();
+									}
+								}
+							}
+						}
+					}
+					break;
+			}
+
+			return routed;
+		}
+
+		private void Redirect(string path) {
+			try {
+				if (this.Response != null) {
+					this.Response.StatusCode = (int)HttpStatusCode.Redirect;
+					this.Response.AddHeader("Location", path);
+
+					this.ResponseOutputStream.Close();
+				}
+			} catch(Exception e) {
+				logger.Trace(e.Message);
 			}
 		}
 

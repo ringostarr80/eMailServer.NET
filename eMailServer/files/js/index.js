@@ -3,6 +3,7 @@ var eMailServerUI = function() {
 		console.log('eMailServerUI.init()');
 		
 		$('header nav ul li[rel]').on('click', navigationClicked);
+		$('#logout').on('click', function() {location.href = "/logout/";});
 		
 		$('header nav ul li[rel="#start"]').trigger('click');
 	}

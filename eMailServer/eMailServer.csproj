@@ -58,6 +58,9 @@
     <Compile Include="eMailEntity.cs" />
     <Compile Include="HttpRequestHandler.cs" />
     <Compile Include="SmtpRequestHandler.cs" />
+    <Compile Include="User.cs" />
+    <Compile Include="MongoDB.cs" />
+    <Compile Include="UserEntity.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -82,5 +85,13 @@
     <EmbeddedResource Include="files\css\index.css" />
     <EmbeddedResource Include="files\js\jquery-2.0.2.min.js" />
     <EmbeddedResource Include="files\js\index.js" />
+    <EmbeddedResource Include="files\login.html" />
+    <EmbeddedResource Include="files\register.html" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\HttpPostRequest\HttpPostRequest.csproj">
+      <Project>{6035A019-74FA-482D-A4E1-866AE7E2D9DB}</Project>
+      <Name>HttpPostRequest</Name>
+    </ProjectReference>
   </ItemGroup>
 </Project>
