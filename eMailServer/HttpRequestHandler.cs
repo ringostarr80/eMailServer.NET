@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
 using System.Net;
@@ -156,18 +157,27 @@ namespace eMailServer {
 					case "files":
 						this.OutputFile(this.RequestRawUrl);
 						break;
+
 					case "login":
 						this.OutputFile("/files/login.html");
 						break;
+
 					case "logout":
 						this.OutputFile("/files/logout.html");
 						break;
+
+					case "mails":
+						this.Mails(this.RequestRawUrl, this.RequestQueryString);
+						break;
+
 					case "register":
 						this.OutputFile("/files/register.html");
 						break;
+
 					case "":
 						this.OutputFile("/files/index.html");
 						break;
+
 					default:
 						//Console.WriteLine("Error: Invalid RequestType = " + RequestType);
 						break;
@@ -179,6 +189,48 @@ namespace eMailServer {
 				XmlError.SetAttribute("remote_address", this.Request.RemoteEndPoint.Address.ToString());
 				XmlRoot.AppendChild(XmlError);
 			}
+		}
+
+		private void Mails(string rawUrl, NameValueCollection queryString) {
+			if (!this.User.IsLoggedIn) {
+				throw new UnauthorizedAccessException("access denied");
+			}
+
+			XmlNode XmlRoot = this._doc.GetElementsByTagName(this._xmlRoot).Item(0);
+			XmlElement XmlMails = this._doc.CreateElement("mails");
+
+			rawUrl = Regex.Replace(rawUrl.Replace("/mails/", ""), "\\?.*", "", RegexOptions.Compiled);
+			switch(rawUrl) {
+				case "all":
+					int mailLimit = -1;
+					if (queryString["limit"] != null && queryString["limit"] != String.Empty) {
+
+					}
+					List<eMail> eMails = this.User.GetEmails(mailLimit);
+					foreach(eMail mail in eMails) {
+						XmlElement XmlMail = this._doc.CreateElement("mail");
+						XmlMail.SetAttribute("from", mail.From);
+						XmlMail.SetAttribute("client_name", mail.ClientName);
+						XmlElement XmlMessage = this._doc.CreateElement("message");
+						XmlMessage.InnerText = mail.Message;
+						XmlMail.AppendChild(XmlMessage);
+						XmlElement XmlRecipients = this._doc.CreateElement("recipients");
+						foreach(string recipient in mail.Recipients) {
+							XmlElement XmlRecipient = this._doc.CreateElement("recipient");
+							XmlRecipient.SetAttribute("email", recipient);
+						}
+						XmlMail.AppendChild(XmlRecipients);
+						XmlMails.AppendChild(XmlMail);
+					}
+					break;
+
+				case "count":
+					long eMailsCount = this.User.CountEMails();
+					XmlMails.SetAttribute("count", eMailsCount.ToString());
+					break;
+			}
+
+			XmlRoot.AppendChild(XmlMails);
 		}
 
 		private void OutputFile(string file) {

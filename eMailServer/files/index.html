@@ -25,10 +25,23 @@
 				<div class="content" id="start"></div>
 				<div class="content table" id="email">
 					<div class="table_row">
-						<nav class="table_cell" id="mail_folders" style="width: 200px;"></nav>
+						<nav class="table_cell" id="mail_folders" style="width: 200px;">
+							<ul>
+								<li id="write_email">eMail schreiben</li>
+								<li data-list-mails="all">eMails (<span id="emails_count">-</span>)</li>
+							</ul>
+						</nav>
 						<section class="table_cell" id="mail_folder_content">
-							<section id="mail_list" class="tabe_cell"></section>
-							<section id="mail_content" class="tble_cell"></section>
+							<section id="mail_list" class="tabe_cell" style="visibility: hidden;"></section>
+							<section id="mail_content" class="table_cell" style="visibility: hidden;"></section>
+							<section id="write_mail_content" class="table_cell" style="visibility: hidden;">
+								<form action="/mail/write" method="post" enctype="multipart/form-data">
+									An: <input type="email" name="email"/><br />
+									Betreff: <input type="text" name="subject"/><br />
+									<textarea name="message"></textarea>
+									<button name="send">Senden</button>
+								</form>
+							</section>
 						</section>
 					</div>
 				</div>

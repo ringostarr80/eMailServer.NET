@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -129,6 +130,36 @@ namespace eMailServer {
 			}
 
 			return false;
+		}
+
+		public long CountEMails() {
+			MongoDatabase mongoDatabase = this._mongoServer.GetDatabase("email");
+			MongoCollection<eMailEntity> mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
+
+			IMongoQuery query = Query<eMailEntity>.Where(e => e.Recipients.Contains(this.EMail));
+			return mongoCollection.Count(query);
+		}
+
+		public List<eMail> GetEmails(int limit) {
+			List<eMail> eMails = new List<eMail>();
+
+			MongoDatabase mongoDatabase = this._mongoServer.GetDatabase("email");
+			MongoCollection<eMailEntity> mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
+
+			IMongoQuery query = Query<eMailEntity>.Where(e => e.Recipients.Contains(this.EMail));
+			MongoCursor<eMailEntity> mongoCursor = mongoCollection.Find(query).SetLimit(limit);
+			foreach(eMailEntity entity in mongoCursor) {
+				eMail mail = new eMail();
+				mail.SetClientName(entity.ClientName);
+				mail.SetFrom(entity.From);
+				mail.SetMessage(entity.Message);
+				if (entity.Recipients.Count > 0) {
+					mail.SetRecipient(entity.Recipients[0]);
+				}
+				eMails.Add(mail);
+			}
+
+			return eMails;
 		}
 	}
 }

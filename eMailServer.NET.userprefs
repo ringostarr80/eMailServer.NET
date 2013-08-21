@@ -1,16 +1,16 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="eMailServer/HttpRequestHandler.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="eMailServer/files/js/index.js">
     <Files>
-      <File FileName="eMailServer/Main.cs" Line="12" Column="1" />
+      <File FileName="eMailServer/Main.cs" Line="60" Column="47" />
       <File FileName="eMailServer/SmtpRequestHandler.cs" Line="20" Column="3" />
-      <File FileName="eMailServer/eMail.cs" Line="92" Column="4" />
-      <File FileName="eMailServer/files/index.html" Line="6" Column="100" />
-      <File FileName="eMailServer/files/login.html" Line="20" Column="12" />
-      <File FileName="eMailServer/files/js/index.js" Line="21" Column="4" />
-      <File FileName="eMailServer/files/css/index.css" Line="69" Column="21" />
-      <File FileName="eMailServer/HttpRequestHandler.cs" Line="191" Column="31" />
-      <File FileName="eMailServer/User.cs" Line="25" Column="25" />
+      <File FileName="eMailServer/eMail.cs" Line="46" Column="36" />
+      <File FileName="eMailServer/User.cs" Line="143" Column="35" />
+      <File FileName="eMailServer/MongoDB.cs" Line="11" Column="12" />
+      <File FileName="eMailServer/files/index.html" Line="34" Column="60" />
+      <File FileName="eMailServer/files/js/index.js" Line="69" Column="3" />
+      <File FileName="eMailServer/files/css/index.css" Line="66" Column="2" />
+      <File FileName="eMailServer/HttpRequestHandler.cs" Line="221" Column="8" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
@@ -19,9 +19,10 @@
             <Node name="References" expanded="True" />
             <Node name="files" expanded="True">
               <Node name="css" expanded="True" />
-              <Node name="js" expanded="True" />
+              <Node name="js" expanded="True">
+                <Node name="index.js" selected="True" />
+              </Node>
             </Node>
-            <Node name="HttpRequestHandler.cs" selected="True" />
           </Node>
           <Node name="HttpPostRequest" expanded="True" />
         </State>

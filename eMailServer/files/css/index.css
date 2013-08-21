@@ -52,10 +52,30 @@ header nav ul.main_navigation li.active {
 }
 
 #content {
+	color: white;
 	position: relative;
 }
 #mail_folders {
-	background-color: gray;
+	background-color: lightblue;
+	min-width: 220px;
+}
+#mail_folders ul {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+}
+#mail_folders ul li {
+	background-color: blue;
+}
+#mail_folders ul li:hover {
+	background-color: white;
+	color: blue;
+	cursor: pointer;
+}
+#mail_folders ul li.active {
+	background-color: white;
+	color: blue;
+	cursor: default;
 }
 #mail_folder_content {
 	background-color: lightgray;
