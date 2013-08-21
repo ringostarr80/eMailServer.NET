@@ -9,6 +9,7 @@ namespace eMailServer {
 		public string ClientName { get; set; }
 		public string From { get; set; }
 		public List<string> Recipients { get; set; }
+		public string Subject { get; set; }
 		public string Message { get; set; }
 	}
 }

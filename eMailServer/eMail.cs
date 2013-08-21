@@ -13,6 +13,7 @@ namespace eMailServer {
 		private string _clientName = String.Empty;
 		private string _from = String.Empty;
 		private List<string> _recipients = new List<string>();
+		private string _subject = String.Empty;
 		private string _message = String.Empty;
 
 		private MongoServer _mongoServer = null;
@@ -20,6 +21,7 @@ namespace eMailServer {
 		public string ClientName { get { return this._clientName; } }
 		public string From { get { return this._from; } }
 		public List<string> Recipients { get { return this._recipients; } }
+		public string Subject { get { return this._subject; } }
 		public string Message { get { return this._message; } }
 
 		public bool IsValid {
@@ -33,6 +35,10 @@ namespace eMailServer {
 
 		public eMail() {
 			this._mongoServer = MyMongoDB.GetServer();
+		}
+
+		public void Send() {
+
 		}
 
 		public void SetClientName(string clientName) {
@@ -55,6 +61,10 @@ namespace eMailServer {
 			}
 		}
 
+		public void SetSubject(string subject) {
+			this._subject = subject;
+		}
+
 		public void SetMessage(string message) {
 			this._message = message;
 		}
@@ -67,10 +77,12 @@ namespace eMailServer {
 
 			Match eMailFieldMatch = Regex.Match(mailAddress, "<([^>]+)>", RegexOptions.Compiled);
 			if (eMailFieldMatch.Success) {
-				Match eMailMatch = Regex.Match(eMailFieldMatch.Groups[1].Value.Trim(), "^([^@]+@[^\\.]+\\.[a-zA-Z]+)$", RegexOptions.Compiled);
-				if (eMailMatch.Success) {
-					return eMailMatch.Groups[1].Value;
-				}
+				mailAddress = mailAddress.Trim(new char[] {'<', '>'});
+			}
+
+			Match eMailMatch = Regex.Match(mailAddress.Trim(), "^([^@]+@[^\\.]+\\.[a-zA-Z]+)$", RegexOptions.Compiled);
+			if (eMailMatch.Success) {
+				return eMailMatch.Groups[1].Value;
 			}
 
 			return null;

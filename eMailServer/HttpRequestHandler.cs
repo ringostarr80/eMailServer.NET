@@ -165,6 +165,10 @@ namespace eMailServer {
 					case "logout":
 						this.OutputFile("/files/logout.html");
 						break;
+					
+					case "mail":
+						this.Mail(this.RequestRawUrl, this.RequestQueryString);
+						break;
 
 					case "mails":
 						this.Mails(this.RequestRawUrl, this.RequestQueryString);
@@ -189,6 +193,64 @@ namespace eMailServer {
 				XmlError.SetAttribute("remote_address", this.Request.RemoteEndPoint.Address.ToString());
 				XmlRoot.AppendChild(XmlError);
 			}
+		}
+
+		private void Mail(string rawUrl, NameValueCollection queryString) {
+			if (!this.User.IsLoggedIn) {
+				throw new UnauthorizedAccessException("access denied");
+			}
+
+			XmlNode XmlRoot = this._doc.GetElementsByTagName(this._xmlRoot).Item(0);
+			XmlElement XmlMail = this._doc.CreateElement("mail");
+
+			rawUrl = Regex.Replace(rawUrl.Replace("/mail/", ""), "\\?.*", "", RegexOptions.Compiled);
+			switch(rawUrl) {
+				case "write":
+					if (this.Request.HttpMethod == "POST") {
+						using(HttpPostRequest.HttpPostRequest postRequest = new HttpPostRequest.HttpPostRequest(this.Request)) {
+							string toEMail = String.Empty;
+							string subject = String.Empty;
+							string message = String.Empty;
+
+							if (postRequest.Parameters["email"] != null) {
+								toEMail = postRequest.Parameters["email"];
+							}
+							if (postRequest.Parameters["subject"] != null) {
+								subject = postRequest.Parameters["subject"];
+							}
+							if (postRequest.Parameters["message"] != null) {
+								message = postRequest.Parameters["message"];
+							}
+
+							eMail newEMail = new eMail();
+							newEMail.SetFrom(this.User.EMail);
+							newEMail.SetRecipient(toEMail);
+							newEMail.SetSubject(subject);
+							newEMail.SetMessage(message);
+
+							XmlMail.SetAttribute("from", newEMail.From);
+							XmlMail.SetAttribute("subject", newEMail.Subject);
+
+							XmlElement XmlRecipients = this._doc.CreateElement("recipients");
+							foreach(string recipient in newEMail.Recipients) {
+								XmlElement XmlRecipient = this._doc.CreateElement("recipient");
+								XmlRecipient.SetAttribute("email", recipient);
+								XmlRecipients.AppendChild(XmlRecipient);
+							}
+							XmlMail.AppendChild(XmlRecipients);
+
+							XmlElement XmlMessage = this._doc.CreateElement("message");
+							XmlMessage.InnerText = newEMail.Message;
+							XmlMail.AppendChild(XmlMessage);
+
+							this.User.AddEMail(newEMail);
+							newEMail.Send();
+						}
+					}
+					break;
+			}
+
+			XmlRoot.AppendChild(XmlMail);
 		}
 
 		private void Mails(string rawUrl, NameValueCollection queryString) {

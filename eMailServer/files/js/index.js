@@ -69,6 +69,11 @@ var eMailServerUI = function() {
 		
 		$('*[data-list-mails]').removeClass('active');
 		$('#write_email').addClass('active');
+		
+		$('#mail_folder_content').hide();
+		$('#write_email_content').show();
+		//$('#mail_content,#mail_list').css({visibility: 'visible'});
+		$('#write_email_body').prop('contenteditable', true);
 	}
 	
 	return {
