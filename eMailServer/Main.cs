@@ -42,8 +42,8 @@ namespace eMailServer {
 				return;
 			}
 			
-			HttpListener httpListener;
-			TcpListener smtpListener;
+			HttpListener httpListener = null;
+			TcpListener smtpListener = null;
 			
 			LimitedConcurrencyLevelTaskScheduler taskScheduler = new LimitedConcurrencyLevelTaskScheduler(500);
 			TaskFactory factory = new TaskFactory(taskScheduler);
@@ -162,10 +162,14 @@ namespace eMailServer {
 			WaitHandle.WaitAll(waitHandles);
 			
 			if (!Options.DisableHttpServer) {
-				httpListener.Close();
+				if (httpListener != null) {
+					httpListener.Close();
+				}
 			}
 			if (!Options.DisableSmtpServer) {
-				smtpListener.Stop();
+				if (smtpListener != null) {
+					smtpListener.Stop();
+				}
 			}
 			
 			if (Options.DisableHttpServer && Options.DisableSmtpServer) {
