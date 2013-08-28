@@ -60,7 +60,7 @@ namespace eMailServer {
 							logger.Info("eMail data received: " + mailMessage);
 							dataStarted = false;
 
-							mail.SetMessage(mailMessage);
+							mail.ParseData(mailMessage);
 							if (mail.IsValid) {
 								mail.SaveToMongoDB();
 							}

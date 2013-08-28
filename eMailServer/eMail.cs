@@ -14,6 +14,7 @@ namespace eMailServer {
 		private string _from = String.Empty;
 		private List<string> _recipients = new List<string>();
 		private string _subject = String.Empty;
+		private List<string> _header = new List<string>();
 		private string _message = String.Empty;
 
 		private MongoServer _mongoServer = null;
@@ -22,6 +23,7 @@ namespace eMailServer {
 		public string From { get { return this._from; } }
 		public List<string> Recipients { get { return this._recipients; } }
 		public string Subject { get { return this._subject; } }
+		public List<string> Header { get { return this._header; } }
 		public string Message { get { return this._message; } }
 
 		public bool IsValid {
@@ -65,6 +67,43 @@ namespace eMailServer {
 			this._subject = subject;
 		}
 
+		public void ParseData(string data) {
+			bool header = true;
+
+			this._header = new List<string>();
+			List<string> messageLines = new List<string>();
+
+			string[] lines = data.Split('\n');
+			foreach(string line in lines) {
+				string trimmedLine = line.Trim();
+				if (header && trimmedLine == String.Empty) {
+					header = false;
+					continue;
+				}
+				if (trimmedLine == String.Empty) {
+					continue;
+				}
+
+				if (header) {
+					this._header.Add(trimmedLine);
+					this.ParseHeaderLine(trimmedLine);
+				} else {
+					messageLines.Add(trimmedLine);
+				}
+			}
+
+			this._message = String.Join("\r\n", messageLines);
+		}
+
+		private void ParseHeaderLine(string line) {
+			Console.WriteLine("ParseHeaderLine(" + line + ")");
+			Match subjectMatch = Regex.Match(line, "^Subject:(.*)", RegexOptions.IgnoreCase);
+			if (subjectMatch.Success) {
+				this._subject = subjectMatch.Groups[1].Value.Trim();
+				Console.WriteLine("Subject found: " + this._subject);
+			}
+		}
+
 		public void SetMessage(string message) {
 			this._message = message;
 		}
@@ -98,7 +137,7 @@ namespace eMailServer {
 			MongoDatabase mongoDatabase = this._mongoServer.GetDatabase("email");
 			MongoCollection mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
 
-			eMailEntity mailEntity = new eMailEntity {ClientName = this.ClientName, From = this.From, Recipients = this.Recipients, Message = this.Message};
+			eMailEntity mailEntity = new eMailEntity {ClientName = this.ClientName, From = this.From, Subject = this.Subject, Recipients = this.Recipients, Header = this.Header, Message = this.Message};
 			WriteConcernResult result = mongoCollection.Save(mailEntity, WriteConcern.Acknowledged);
 
 			logger.Info("WriteConcernResult: " + result.Ok);
