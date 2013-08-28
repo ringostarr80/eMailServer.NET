@@ -12,6 +12,9 @@ namespace eMailServer {
 
 		[Option('s', "smtp-port", DefaultValue = 25, Required = false, HelpText = "The SMTP-Port to listen.")]
 		public int SmtpPort { get; set; }
+
+		[Option('m', "secure-smtp-port", DefaultValue = 465, Required = false, HelpText = "The Secure SMTP-Port to listen.")]
+		public int SecureSmtpPort { get; set; }
 		
 		[Option('t', "disable-smtp-server", DefaultValue = false, Required = false, HelpText = "Disable the SMTP-Server.")]
 		public bool DisableSmtpServer { get; set; }

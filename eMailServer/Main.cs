@@ -44,6 +44,7 @@ namespace eMailServer {
 			
 			HttpListener httpListener = null;
 			TcpListener smtpListener = null;
+			TcpListener secureSmtpListener = null;
 			
 			LimitedConcurrencyLevelTaskScheduler taskScheduler = new LimitedConcurrencyLevelTaskScheduler(500);
 			TaskFactory factory = new TaskFactory(taskScheduler);
@@ -110,9 +111,11 @@ namespace eMailServer {
 			
 			if (!Options.DisableSmtpServer) {
 				smtpListener = new TcpListener(IPAddress.Parse("127.0.0.1"), Options.SmtpPort);
+				secureSmtpListener = new TcpListener(IPAddress.Parse("127.0.0.1"), Options.SecureSmtpPort);
 	
 				try {
 					smtpListener.Start();
+					secureSmtpListener.Start();
 				} catch(Exception e) {
 					logger.Error("TcpListener: " + e.Message);
 					LogManager.Configuration = null;
@@ -120,6 +123,7 @@ namespace eMailServer {
 				}
 	
 				logger.Info("Listening on SMTP-Port " + Options.SmtpPort);
+				logger.Info("Listening on Secure SMTP-Port " + Options.SecureSmtpPort);
 	
 				// Smtp-Listener Task
 				factory.StartNew(() => {
@@ -155,6 +159,41 @@ namespace eMailServer {
 					((AutoResetEvent)waitHandles[1]).Set();
 				}
 				);
+
+				// Secure Smtp-Listener Task
+				factory.StartNew(() => {
+					Thread.CurrentThread.CurrentCulture = CultureInfo.CreateSpecificCulture("en-US");
+					bool repeatSmtpListener = true;
+					do {
+						try {
+							factory.StartNew((context) => {
+								Thread.CurrentThread.CurrentCulture = CultureInfo.CreateSpecificCulture("en-US");
+								SmtpRequestHandler handler = new SmtpRequestHandler((TcpClient)context);
+								try {
+									handler.ProcessRequest();
+								} catch(Exception e) {
+									logger.ErrorException(e.Message, e);
+									logger.Error(e.StackTrace);
+								} finally {
+									handler.OutputResult();
+								}
+							}, (object)secureSmtpListener.AcceptTcpClient(), TaskCreationOptions.PreferFairness);
+						} catch(AggregateException e) {
+							logger.Error("Es sind " + e.InnerExceptions.Count + " Fehler aufgetreten");
+							AggregateException eFlatten = e.Flatten();
+							eFlatten.Handle(exc => {
+								logger.Error(exc.Message);
+								return true;
+							}
+							);
+						} catch(Exception e) {
+							logger.Error("Exception aufgetreten: " + e.Message);
+						}
+					} while(repeatSmtpListener);
+	
+					((AutoResetEvent)waitHandles[1]).Set();
+				}
+				);
 			} else {
 				((AutoResetEvent)waitHandles[1]).Set();
 			}
@@ -169,6 +208,9 @@ namespace eMailServer {
 			if (!Options.DisableSmtpServer) {
 				if (smtpListener != null) {
 					smtpListener.Stop();
+				}
+				if (secureSmtpListener != null) {
+					secureSmtpListener.Stop();
 				}
 			}
 			
