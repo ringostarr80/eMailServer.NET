@@ -55,7 +55,8 @@ namespace eMailServer {
 					int startIndex = 0;
 
 					do {
-						incomingMessage += buffer.Substring(startIndex, buffer.IndexOf("\n", startIndex) + 1);
+						newlineIndex = buffer.IndexOf("\n", startIndex);
+						incomingMessage += buffer.Substring(startIndex, newlineIndex + 1);
 
 						if (!dataStarted) {
 							incomingMessage = incomingMessage.Trim();
