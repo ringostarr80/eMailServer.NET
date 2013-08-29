@@ -50,58 +50,67 @@ namespace eMailServer {
 					logger.Debug("Raw incoming string: " + buffer);
 				}
 
-				if (buffer.IndexOf("\n") != -1) {
-					incomingMessage += buffer.Substring(0, buffer.IndexOf("\n") + 1);
+				int newlineIndex = buffer.IndexOf("\n");
+				if (newlineIndex != -1) {
+					int startIndex = 0;
 
-					if (!dataStarted) {
-						incomingMessage = incomingMessage.Trim();
-						logger.Info(String.Format("[{0}:{1}] Received: \"{2}\"", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, incomingMessage));
+					do {
+						incomingMessage += buffer.Substring(startIndex, buffer.IndexOf("\n", startIndex) + 1);
 
-						if (incomingMessage.StartsWith("HELO ")) {
-							mail.SetClientName(incomingMessage.Substring(5));
-							this.SendMessage("OK", 250);
-						} else if (incomingMessage.StartsWith("MAIL FROM:")) {
-							mail.SetFrom(incomingMessage.Substring(10));
-							this.SendMessage("OK", 250);
-						} else if (incomingMessage.StartsWith("RCPT TO:")) {
-							mail.SetRecipient(incomingMessage.Substring(8));
-							this.SendMessage("OK", 250);
-						} else if (incomingMessage == "DATA") {
-							this.SendMessage("start mail input", 354);
-							dataStarted = true;
-							dataFinished = false;
-						} else if (incomingMessage == "QUIT") {
-							if (eMailServer.Options.Verbose) {
-								logger.Debug("[{0}:{1}] quit connection", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port);
+						if (!dataStarted) {
+							incomingMessage = incomingMessage.Trim();
+							logger.Info(String.Format("[{0}:{1}] Received: \"{2}\"", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, incomingMessage));
+
+							if (incomingMessage.StartsWith("HELO ")) {
+								mail.SetClientName(incomingMessage.Substring(5));
+								this.SendMessage("OK", 250);
+							} else if (incomingMessage.StartsWith("MAIL FROM:")) {
+								mail.SetFrom(incomingMessage.Substring(10));
+								this.SendMessage("OK", 250);
+							} else if (incomingMessage.StartsWith("RCPT TO:")) {
+								mail.SetRecipient(incomingMessage.Substring(8));
+								this.SendMessage("OK", 250);
+							} else if (incomingMessage == "DATA") {
+								this.SendMessage("start mail input", 354);
+								dataStarted = true;
+								dataFinished = false;
+							} else if (incomingMessage == "QUIT") {
+								if (eMailServer.Options.Verbose) {
+									logger.Debug("[{0}:{1}] quit connection", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port);
+								}
+								return;
+							} else {
+								this.SendMessage("Syntax error, command unrecognized", 500);
+								if (eMailServer.Options.Verbose) {
+									logger.Debug("[{0}:{1}] unknown command: {2}", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, incomingMessage);
+								}
 							}
-							return;
 						} else {
-							this.SendMessage("Syntax error, command unrecognized", 500);
-							if (eMailServer.Options.Verbose) {
-								logger.Debug("[{0}:{1}] unknown command: {2}", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, incomingMessage);
+							if (incomingMessage.Trim() == ".") {
+								mailMessage = mailMessage.Trim();
+								logger.Info("[{0}:{1}] eMail data received: {2}", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, mailMessage);
+								dataStarted = false;
+								dataFinished = true;
+
+								mail.ParseData(mailMessage);
+								if (mail.IsValid) {
+									mail.SaveToMongoDB();
+								}
+
+								this.SendMessage("OK", 250);
+							} else {
+								mailMessage += incomingMessage;
 							}
 						}
-					} else {
-						if (incomingMessage.Trim() == ".") {
-							mailMessage = mailMessage.Trim();
-							logger.Info("[{0}:{1}] eMail data received: {2}", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, mailMessage);
-							dataStarted = false;
-							dataFinished = true;
 
-							mail.ParseData(mailMessage);
-							if (mail.IsValid) {
-								mail.SaveToMongoDB();
-							}
-
-							this.SendMessage("OK", 250);
-						} else {
-							mailMessage += incomingMessage;
+						if (!dataStarted || dataFinished) {
+							incomingMessage = String.Empty;
 						}
-					}
 
-					if (!dataStarted || dataFinished) {
-						incomingMessage = String.Empty;
-					}
+						if (startIndex + newlineIndex + 1 < i) {
+							startIndex += newlineIndex + 1;
+						}
+					} while(startIndex + newlineIndex + 1 < i);
 				} else {
 					incomingMessage += buffer;
 				}
