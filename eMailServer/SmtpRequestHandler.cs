@@ -22,12 +22,14 @@ namespace eMailServer {
 
 		public SmtpRequestHandler(TcpClient client) {
 			this._remoteEndPoint = (IPEndPoint)client.Client.RemoteEndPoint;
-			if (this._remoteEndPoint != null) {
-				logger.Debug("connected to {0}:{1}", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port);
-			}
 			this._localEndPoint = (IPEndPoint)client.Client.LocalEndPoint;
-			if (this._localEndPoint != null) {
-				logger.Debug("local endpoint {0}:{1}", this._localEndPoint.Address.ToString(), this._localEndPoint.Port);
+			if (eMailServer.Options.Verbose && this._remoteEndPoint != null && this._localEndPoint != null) {
+				logger.Debug("connected from remote [{0}:{1}] to local [{2}:{3}]",
+					this._remoteEndPoint.Address.ToString(),
+				    this._remoteEndPoint.Port,
+				    this._localEndPoint.Address.ToString(),
+				    this._localEndPoint.Port
+				);
 			}
 
 			this._stream = client.GetStream();
@@ -43,6 +45,10 @@ namespace eMailServer {
 			bool dataStarted = false;
 			while((i = this._stream.Read(bytes, 0, bytes.Length)) != 0) {
 				string buffer = Encoding.UTF8.GetString(bytes, 0, i);
+				if (eMailServer.Options.Verbose) {
+					logger.Debug("Raw incoming string: " + buffer);
+				}
+
 				if (buffer.IndexOf("\n") != -1) {
 					incomingMessage += buffer.Substring(0, buffer.IndexOf("\n") + 1);
 
