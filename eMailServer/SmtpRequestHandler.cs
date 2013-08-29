@@ -43,6 +43,7 @@ namespace eMailServer {
 			string incomingMessage = String.Empty;
 			string mailMessage = String.Empty;
 			bool dataStarted = false;
+			bool dataFinished = false;
 			while((i = this._stream.Read(bytes, 0, bytes.Length)) != 0) {
 				string buffer = Encoding.UTF8.GetString(bytes, 0, i);
 				if (eMailServer.Options.Verbose) {
@@ -68,6 +69,7 @@ namespace eMailServer {
 						} else if (incomingMessage == "DATA") {
 							this.SendMessage("start mail input", 354);
 							dataStarted = true;
+							dataFinished = false;
 						} else if (incomingMessage == "QUIT") {
 							if (eMailServer.Options.Verbose) {
 								logger.Debug("[{0}:{1}] quit connection", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port);
@@ -84,6 +86,7 @@ namespace eMailServer {
 							mailMessage = mailMessage.Trim();
 							logger.Info("[{0}:{1}] eMail data received: {2}", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, mailMessage);
 							dataStarted = false;
+							dataFinished = true;
 
 							mail.ParseData(mailMessage);
 							if (mail.IsValid) {
@@ -96,7 +99,9 @@ namespace eMailServer {
 						}
 					}
 
-					incomingMessage = String.Empty;
+					if (!dataStarted || dataStarted && dataFinished) {
+						incomingMessage = String.Empty;
+					}
 				} else {
 					incomingMessage += buffer;
 				}
