@@ -124,76 +124,43 @@ namespace eMailServer {
 	
 				logger.Info("Listening on SMTP-Port " + Options.SmtpPort);
 				logger.Info("Listening on Secure SMTP-Port " + Options.SecureSmtpPort);
+
+				Action<object> receiveRequest = (object listener) => {
+					Thread.CurrentThread.CurrentCulture = CultureInfo.CreateSpecificCulture("en-US");
+					bool repeatSmtpListener = true;
+					do {
+						try {
+							factory.StartNew((context) => {
+								Thread.CurrentThread.CurrentCulture = CultureInfo.CreateSpecificCulture("en-US");
+								SmtpRequestHandler handler = new SmtpRequestHandler((TcpClient)context);
+								try {
+									handler.ProcessRequest();
+								} catch(Exception e) {
+									logger.ErrorException(e.Message, e);
+									logger.Error(e.StackTrace);
+								} finally {
+									handler.OutputResult();
+								}
+							}, (object)((TcpListener)listener).AcceptTcpClient(), TaskCreationOptions.PreferFairness);
+						} catch(AggregateException e) {
+							logger.Error("Es sind " + e.InnerExceptions.Count + " Fehler aufgetreten");
+							AggregateException eFlatten = e.Flatten();
+							eFlatten.Handle(exc => {
+								logger.Error(exc.Message);
+								return true;
+							}
+							);
+						} catch(Exception e) {
+							logger.Error("Exception aufgetreten: " + e.Message);
+						}
+					} while(repeatSmtpListener);
+	
+					((AutoResetEvent)waitHandles[1]).Set();
+				};
 	
 				// Smtp-Listener Task
-				factory.StartNew(() => {
-					Thread.CurrentThread.CurrentCulture = CultureInfo.CreateSpecificCulture("en-US");
-					bool repeatSmtpListener = true;
-					do {
-						try {
-							factory.StartNew((context) => {
-								Thread.CurrentThread.CurrentCulture = CultureInfo.CreateSpecificCulture("en-US");
-								SmtpRequestHandler handler = new SmtpRequestHandler((TcpClient)context);
-								try {
-									handler.ProcessRequest();
-								} catch(Exception e) {
-									logger.ErrorException(e.Message, e);
-									logger.Error(e.StackTrace);
-								} finally {
-									handler.OutputResult();
-								}
-							}, (object)smtpListener.AcceptTcpClient(), TaskCreationOptions.PreferFairness);
-						} catch(AggregateException e) {
-							logger.Error("Es sind " + e.InnerExceptions.Count + " Fehler aufgetreten");
-							AggregateException eFlatten = e.Flatten();
-							eFlatten.Handle(exc => {
-								logger.Error(exc.Message);
-								return true;
-							}
-							);
-						} catch(Exception e) {
-							logger.Error("Exception aufgetreten: " + e.Message);
-						}
-					} while(repeatSmtpListener);
-	
-					((AutoResetEvent)waitHandles[1]).Set();
-				}
-				);
-
-				// Secure Smtp-Listener Task
-				factory.StartNew(() => {
-					Thread.CurrentThread.CurrentCulture = CultureInfo.CreateSpecificCulture("en-US");
-					bool repeatSmtpListener = true;
-					do {
-						try {
-							factory.StartNew((context) => {
-								Thread.CurrentThread.CurrentCulture = CultureInfo.CreateSpecificCulture("en-US");
-								SmtpRequestHandler handler = new SmtpRequestHandler((TcpClient)context);
-								try {
-									handler.ProcessRequest();
-								} catch(Exception e) {
-									logger.ErrorException(e.Message, e);
-									logger.Error(e.StackTrace);
-								} finally {
-									handler.OutputResult();
-								}
-							}, (object)secureSmtpListener.AcceptTcpClient(), TaskCreationOptions.PreferFairness);
-						} catch(AggregateException e) {
-							logger.Error("Es sind " + e.InnerExceptions.Count + " Fehler aufgetreten");
-							AggregateException eFlatten = e.Flatten();
-							eFlatten.Handle(exc => {
-								logger.Error(exc.Message);
-								return true;
-							}
-							);
-						} catch(Exception e) {
-							logger.Error("Exception aufgetreten: " + e.Message);
-						}
-					} while(repeatSmtpListener);
-	
-					((AutoResetEvent)waitHandles[1]).Set();
-				}
-				);
+				factory.StartNew(receiveRequest, smtpListener);
+				factory.StartNew(receiveRequest, secureSmtpListener);
 			} else {
 				((AutoResetEvent)waitHandles[1]).Set();
 			}

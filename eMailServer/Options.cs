@@ -4,6 +4,9 @@ using CommandLine.Text;
 
 namespace eMailServer {
 	public class Options {
+		[Option('v', "verbose", DefaultValue = false, Required = false, HelpText = "Output more informations.")]
+		public bool Verbose { get; set; }
+
 		[Option('h', "http-port", DefaultValue = 80, Required = false, HelpText = "The HTTP-Port to listen.")]
 		public int HttpPort { get; set; }
 		

@@ -52,7 +52,14 @@ namespace eMailServer {
 							this.SendMessage("start mail input", 354);
 							dataStarted = true;
 						} else if (incomingMessage == "QUIT") {
+							if (eMailServer.Options.Verbose) {
+								logger.Debug("quit connection");
+							}
 							return;
+						} else {
+							if (eMailServer.Options.Verbose) {
+								logger.Debug("unknown command: {0}", incomingMessage);
+							}
 						}
 					} else {
 						if (incomingMessage.Trim() == ".") {
