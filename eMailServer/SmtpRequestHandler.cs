@@ -99,7 +99,7 @@ namespace eMailServer {
 						}
 					}
 
-					if (!dataStarted || dataStarted && dataFinished) {
+					if (!dataStarted || dataFinished) {
 						incomingMessage = String.Empty;
 					}
 				} else {
