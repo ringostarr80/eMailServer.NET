@@ -68,6 +68,7 @@ namespace eMailServer {
 							}
 							return;
 						} else {
+							this.SendMessage("Syntax error, command unrecognized", 500);
 							if (eMailServer.Options.Verbose) {
 								logger.Debug("[{0}:{1}] unknown command: {2}", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, incomingMessage);
 							}
