@@ -97,7 +97,7 @@ namespace eMailServer {
 		}
 
 		private void SendMessage(string message, int status) {
-			byte[] msg = Encoding.UTF8.GetBytes(String.Format("{0} {1}\n", status, message));
+			byte[] msg = Encoding.UTF8.GetBytes(String.Format("{0} {1}\r\n", status, message));
 			this._stream.Write(msg, 0, msg.Length);
 			logger.Info(String.Format("[{0}:{1}] message sent: {2}", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, message));
 		}
