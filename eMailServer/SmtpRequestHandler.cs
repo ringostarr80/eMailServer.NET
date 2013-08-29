@@ -14,6 +14,7 @@ namespace eMailServer {
 
 		private NetworkStream _stream = null;
 		private IPEndPoint _remoteEndPoint = null;
+		private IPEndPoint _localEndPoint = null;
 
 		public SmtpRequestHandler() {
 
@@ -23,6 +24,10 @@ namespace eMailServer {
 			this._remoteEndPoint = (IPEndPoint)client.Client.RemoteEndPoint;
 			if (this._remoteEndPoint != null) {
 				logger.Debug("connected to {0}:{1}", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port);
+			}
+			this._localEndPoint = (IPEndPoint)client.Client.LocalEndPoint;
+			if (this._localEndPoint != null) {
+				logger.Debug("local endpoint {0}:{1}", this._localEndPoint.Address.ToString(), this._localEndPoint.Port);
 			}
 
 			this._stream = client.GetStream();
