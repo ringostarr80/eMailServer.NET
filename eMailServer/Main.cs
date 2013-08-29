@@ -110,8 +110,8 @@ namespace eMailServer {
 			}
 			
 			if (!Options.DisableSmtpServer) {
-				smtpListener = new TcpListener(IPAddress.Parse("127.0.0.1"), Options.SmtpPort);
-				secureSmtpListener = new TcpListener(IPAddress.Parse("127.0.0.1"), Options.SecureSmtpPort);
+				smtpListener = new TcpListener(IPAddress.Any, Options.SmtpPort);
+				secureSmtpListener = new TcpListener(IPAddress.Any, Options.SecureSmtpPort);
 	
 				try {
 					smtpListener.Start();
