@@ -122,6 +122,8 @@ namespace eMailServer {
 							mail.ParseData(mailMessage);
 							if (mail.IsValid) {
 								mail.SaveToMongoDB();
+							} else {
+								logger.Error("received message is invalid for saving to database.");
 							}
 
 							this.SendMessage("OK", 250);
@@ -134,77 +136,6 @@ namespace eMailServer {
 						incomingMessage = String.Empty;
 					}
 				}
-
-				/*
-				int newlineIndex = buffer.IndexOf("\n");
-				if (newlineIndex != -1) {
-					int startIndex = 0;
-
-					do {
-						newlineIndex = buffer.IndexOf("\n", startIndex);
-						incomingMessage += buffer.Substring(startIndex, newlineIndex + 1);
-
-						if (!dataStarted) {
-							incomingMessage = incomingMessage.Trim();
-							logger.Info(String.Format("[{0}:{1}] Received: \"{2}\"", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, incomingMessage));
-
-							if (incomingMessage.StartsWith("HELO ")) {
-								mail.SetClientName(incomingMessage.Substring(5));
-								this.SendMessage("OK", 250);
-							} else if (incomingMessage.StartsWith("MAIL FROM:")) {
-								mail.SetFrom(incomingMessage.Substring(10));
-								this.SendMessage("OK", 250);
-							} else if (incomingMessage.StartsWith("RCPT TO:")) {
-								mail.SetRecipient(incomingMessage.Substring(8));
-								this.SendMessage("OK", 250);
-							} else if (incomingMessage == "DATA") {
-								this.SendMessage("start mail input", 354);
-								dataStarted = true;
-								dataFinished = false;
-							} else if (incomingMessage == "QUIT") {
-								if (eMailServer.Options.Verbose) {
-									logger.Debug("[{0}:{1}] quit connection", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port);
-								}
-								return;
-							} else {
-								this.SendMessage("Syntax error, command unrecognized", 500);
-								if (eMailServer.Options.Verbose) {
-									logger.Debug("[{0}:{1}] unknown command: {2}", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, incomingMessage);
-								}
-							}
-						} else {
-							if (incomingMessage.Trim() == ".") {
-								mailMessage = mailMessage.Trim();
-								logger.Info("[{0}:{1}] eMail data received: {2}", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, mailMessage);
-								dataStarted = false;
-								dataFinished = true;
-
-								mail.ParseData(mailMessage);
-								if (mail.IsValid) {
-									mail.SaveToMongoDB();
-								}
-
-								this.SendMessage("OK", 250);
-							} else {
-								mailMessage += incomingMessage;
-							}
-						}
-
-						if (!dataStarted || dataFinished) {
-							incomingMessage = String.Empty;
-						}
-
-						if (startIndex + newlineIndex + 1 < i) {
-							startIndex += newlineIndex + 1;
-						}
-						if (eMailServer.Options.Verbose) {
-							logger.Debug("startIndex: {0}; newlineIndex: {1}; i: {2}", startIndex, newlineIndex, i);
-						}
-					} while(startIndex + newlineIndex + 1 < i);
-				} else {
-					incomingMessage += buffer;
-				}
-				*/
 			}
 		}
 
