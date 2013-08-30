@@ -61,6 +61,7 @@
     <Compile Include="User.cs" />
     <Compile Include="MongoDB.cs" />
     <Compile Include="UserEntity.cs" />
+    <Compile Include="RegexUtilities.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

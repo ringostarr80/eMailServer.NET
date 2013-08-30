@@ -38,7 +38,7 @@ namespace eMailServer {
 
 			eMail mail = new eMail();
 
-			Byte[] bytes = new Byte[10];
+			Byte[] bytes = new Byte[1024];
 			char[] trimChars = new char[] {'\r', '\n'};
 			int i = 0;
 			string incomingMessage = String.Empty;

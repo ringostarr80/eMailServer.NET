@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using MongoDB.Bson;
@@ -116,12 +117,12 @@ namespace eMailServer {
 
 			Match eMailFieldMatch = Regex.Match(mailAddress, "<([^>]+)>", RegexOptions.Compiled);
 			if (eMailFieldMatch.Success) {
-				mailAddress = mailAddress.Trim(new char[] {'<', '>'});
+				mailAddress = mailAddress.Trim(new char[] {'<', '>'}).Trim();
 			}
 
-			Match eMailMatch = Regex.Match(mailAddress.Trim(), "^([^@]+@[^\\.]+\\.[a-zA-Z]+)$", RegexOptions.Compiled);
-			if (eMailMatch.Success) {
-				return eMailMatch.Groups[1].Value;
+			RegexUtilities regexUtility = new RegexUtilities();
+			if (regexUtility.IsValidEmail(mailAddress)) {
+				return mailAddress;
 			}
 
 			return null;
