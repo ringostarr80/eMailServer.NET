@@ -45,9 +45,26 @@ namespace eMailServer {
 			bool dataStarted = false;
 			bool dataFinished = false;
 			while((i = this._stream.Read(bytes, 0, bytes.Length)) != 0) {
+				List<string> lines = new List<string>();
+				int byteStartIndex = 0;
+				for(int byteIndex = 0; byteIndex < i; byteIndex++) {
+					if (bytes[byteIndex] == '\n') {
+						lines.Add(Encoding.UTF8.GetString(bytes, byteStartIndex, byteIndex - byteStartIndex).Trim());
+						byteStartIndex = byteIndex;
+					} else if (byteIndex == i - 1) {
+						lines.Add(Encoding.UTF8.GetString(bytes, byteStartIndex, byteIndex - byteStartIndex).Trim());
+					}
+				}
+
 				string buffer = Encoding.UTF8.GetString(bytes, 0, i);
 				if (eMailServer.Options.Verbose) {
 					logger.Debug("Raw incoming string: " + buffer);
+					logger.Debug("lines:");
+					int lineCounter = 0;
+					foreach(string line in lines) {
+						lineCounter++;
+						logger.Debug("line {0}: {1}", lineCounter, line);
+					}
 				}
 
 				int newlineIndex = buffer.IndexOf("\n");
@@ -110,6 +127,9 @@ namespace eMailServer {
 
 						if (startIndex + newlineIndex + 1 < i) {
 							startIndex += newlineIndex + 1;
+						}
+						if (eMailServer.Options.Verbose) {
+							logger.Debug("startIndex: {0}; newlineIndex: {1}; i: {2}", startIndex, newlineIndex, i);
 						}
 					} while(startIndex + newlineIndex + 1 < i);
 				} else {

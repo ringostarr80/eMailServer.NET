@@ -1,9 +1,9 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="eMailServer/Main.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="eMailServer/SmtpRequestHandler.cs">
     <Files>
-      <File FileName="eMailServer/Main.cs" Line="130" Column="87" />
-      <File FileName="eMailServer/SmtpRequestHandler.cs" Line="24" Column="43" />
+      <File FileName="eMailServer/Main.cs" Line="137" Column="35" />
+      <File FileName="eMailServer/SmtpRequestHandler.cs" Line="90" Column="44" />
       <File FileName="eMailServer/eMail.cs" Line="140" Column="116" />
       <File FileName="eMailServer/User.cs" Line="169" Column="170" />
       <File FileName="eMailServer/MongoDB.cs" Line="11" Column="12" />
@@ -12,7 +12,7 @@
       <File FileName="eMailServer/files/css/index.css" Line="141" Column="1" />
       <File FileName="eMailServer/HttpRequestHandler.cs" Line="232" Column="46" />
       <File FileName="eMailServer/eMailEntity.cs" Line="12" Column="38" />
-      <File FileName="eMailServer/Options.cs" Line="17" Column="42" />
+      <File FileName="eMailServer/Options.cs" Line="11" Column="36" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
