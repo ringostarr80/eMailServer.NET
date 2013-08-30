@@ -38,35 +38,104 @@ namespace eMailServer {
 
 			eMail mail = new eMail();
 
-			Byte[] bytes = new Byte[1024];
+			Byte[] bytes = new Byte[10];
+			char[] trimChars = new char[] {'\r', '\n'};
 			int i = 0;
 			string incomingMessage = String.Empty;
 			string mailMessage = String.Empty;
+			string lastLine = String.Empty;
 			bool dataStarted = false;
 			bool dataFinished = false;
+
 			while((i = this._stream.Read(bytes, 0, bytes.Length)) != 0) {
+				bool lastLineHasLineEnding = false;
 				List<string> lines = new List<string>();
 				int byteStartIndex = 0;
 				for(int byteIndex = 0; byteIndex < i; byteIndex++) {
 					if (bytes[byteIndex] == '\n') {
-						lines.Add(Encoding.UTF8.GetString(bytes, byteStartIndex, byteIndex - byteStartIndex).Trim());
+						string currentline = Encoding.UTF8.GetString(bytes, byteStartIndex, byteIndex + 1 - byteStartIndex).Trim(trimChars);
+						if (lines.Count == 0 && lastLine != String.Empty) {
+							currentline = lastLine + currentline;
+						}
+						lines.Add(currentline);
 						byteStartIndex = byteIndex;
+						if (byteIndex == i - 1) {
+							lastLineHasLineEnding = true;
+						}
 					} else if (byteIndex == i - 1) {
-						lines.Add(Encoding.UTF8.GetString(bytes, byteStartIndex, byteIndex - byteStartIndex).Trim());
+						string currentline = Encoding.UTF8.GetString(bytes, byteStartIndex, byteIndex + 1 - byteStartIndex).Trim(trimChars);
+						if (lines.Count == 0 && lastLine != String.Empty) {
+							currentline = lastLine + currentline;
+						}
+						lines.Add(currentline);
 					}
 				}
 
+				lastLine = String.Empty;
 				string buffer = Encoding.UTF8.GetString(bytes, 0, i);
 				if (eMailServer.Options.Verbose) {
 					logger.Debug("Raw incoming string: " + buffer);
-					logger.Debug("lines:");
-					int lineCounter = 0;
-					foreach(string line in lines) {
-						lineCounter++;
-						logger.Debug("line {0}: {1}", lineCounter, line);
+				}
+
+				for(int lineIndex = 0; lineIndex < lines.Count; lineIndex++) {
+					incomingMessage += lines[lineIndex];
+
+					if (lineIndex == lines.Count - 1 && !lastLineHasLineEnding) {
+						lastLine = lines[lineIndex];
+						break;
+					}
+
+					if (!dataStarted) {
+						logger.Info(String.Format("[{0}:{1}] Received: \"{2}\"", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, lines[lineIndex]));
+
+						if (lines[lineIndex].StartsWith("HELO ")) {
+							mail.SetClientName(lines[lineIndex].Substring(5));
+							this.SendMessage("OK", 250);
+						} else if (lines[lineIndex].StartsWith("MAIL FROM:")) {
+							mail.SetFrom(lines[lineIndex].Substring(10));
+							this.SendMessage("OK", 250);
+						} else if (lines[lineIndex].StartsWith("RCPT TO:")) {
+							mail.SetRecipient(lines[lineIndex].Substring(8));
+							this.SendMessage("OK", 250);
+						} else if (lines[lineIndex] == "DATA") {
+							this.SendMessage("start mail input", 354);
+							dataStarted = true;
+							dataFinished = false;
+						} else if (lines[lineIndex] == "QUIT") {
+							if (eMailServer.Options.Verbose) {
+								logger.Debug("[{0}:{1}] quit connection", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port);
+							}
+							return;
+						} else {
+							this.SendMessage("Syntax error, command unrecognized", 500);
+							if (eMailServer.Options.Verbose) {
+								logger.Debug("[{0}:{1}] unknown command: {2}", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, lines[lineIndex]);
+							}
+						}
+					} else {
+						if (lines[lineIndex] == ".") {
+							mailMessage = mailMessage.Trim();
+							logger.Info("[{0}:{1}] eMail data received: {2}", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, mailMessage);
+							dataStarted = false;
+							dataFinished = true;
+
+							mail.ParseData(mailMessage);
+							if (mail.IsValid) {
+								mail.SaveToMongoDB();
+							}
+
+							this.SendMessage("OK", 250);
+						} else {
+							mailMessage += lines[lineIndex] + "\r\n";
+						}
+					}
+
+					if (!dataStarted || dataFinished) {
+						incomingMessage = String.Empty;
 					}
 				}
 
+				/*
 				int newlineIndex = buffer.IndexOf("\n");
 				if (newlineIndex != -1) {
 					int startIndex = 0;
@@ -135,6 +204,7 @@ namespace eMailServer {
 				} else {
 					incomingMessage += buffer;
 				}
+				*/
 			}
 		}
 
