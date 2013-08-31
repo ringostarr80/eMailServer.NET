@@ -84,10 +84,10 @@
   <ItemGroup>
     <EmbeddedResource Include="files\index.html" />
     <EmbeddedResource Include="files\css\index.css" />
-    <EmbeddedResource Include="files\js\jquery-2.0.2.min.js" />
     <EmbeddedResource Include="files\js\index.js" />
     <EmbeddedResource Include="files\login.html" />
     <EmbeddedResource Include="files\register.html" />
+    <EmbeddedResource Include="files\js\jquery-2.0.3.min.js" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\HttpPostRequest\HttpPostRequest.csproj">

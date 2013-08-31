@@ -3,27 +3,34 @@ using CommandLine;
 using CommandLine.Text;
 
 namespace eMailServer {
+	/// <summary>
+	/// CommandLine Options.
+	/// </summary>
+	/// <see cref="http://commandline.codeplex.com/"/>
 	public class Options {
-		[Option('v', "verbose", DefaultValue = false, Required = false, HelpText = "Output more informations.")]
-		public bool Verbose { get; set; }
-
-		[Option('h', "http-port", DefaultValue = 80, Required = false, HelpText = "The HTTP-Port to listen.")]
-		public int HttpPort { get; set; }
+		[Option('a', "db-address", DefaultValue = "localhost", Required = false, HelpText = "The database address where to connect.")]
+		public string DatabaseAddress { get; set; }
 		
 		[Option('d', "disable-http-server", DefaultValue = false, Required = false, HelpText = "Disable the HTTP-Server.")]
 		public bool DisableHttpServer { get; set; }
-
-		[Option('s', "smtp-port", DefaultValue = 25, Required = false, HelpText = "The SMTP-Port to listen.")]
-		public int SmtpPort { get; set; }
+		
+		[Option('t', "disable-smtp-server", DefaultValue = false, Required = false, HelpText = "Disable the SMTP-Server.")]
+		public bool DisableSmtpServer { get; set; }
+		
+		[Option('h', "http-port", DefaultValue = 80, Required = false, HelpText = "The HTTP-Port to listen.")]
+		public int HttpPort { get; set; }
 
 		[Option('m', "secure-smtp-port", DefaultValue = 465, Required = false, HelpText = "The Secure SMTP-Port to listen.")]
 		public int SecureSmtpPort { get; set; }
 		
-		[Option('t', "disable-smtp-server", DefaultValue = false, Required = false, HelpText = "Disable the SMTP-Server.")]
-		public bool DisableSmtpServer { get; set; }
+		[Option('s', "smtp-port", DefaultValue = 25, Required = false, HelpText = "The SMTP-Port to listen.")]
+		public int SmtpPort { get; set; }
+
+		[Option('v', "verbose", DefaultValue = false, Required = false, HelpText = "Output more informations.")]
+		public bool Verbose { get; set; }
 
 		public Options() {
-
+			
 		}
 
 		[HelpOption(HelpText = "Display this help screen.")]

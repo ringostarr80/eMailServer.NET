@@ -4,7 +4,7 @@ using MongoDB.Driver;
 
 namespace eMailServer {
 	public class MyMongoDB {
-		private const string _connectionString = "mongodb://localhost";
+		private static string _connectionString = "mongodb://" + eMailServer.Options.DatabaseAddress;
 
 		private static MongoServer _mongoServer = null;
 
