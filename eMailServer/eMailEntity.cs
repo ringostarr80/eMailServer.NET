@@ -7,6 +7,7 @@ namespace eMailServer {
 	public class eMailEntity {
 		public ObjectId Id { get; set; }
 		public string ClientName { get; set; }
+		public DateTime Time { get; set; }
 		public string From { get; set; }
 		public List<string> Recipients { get; set; }
 		public string Subject { get; set; }

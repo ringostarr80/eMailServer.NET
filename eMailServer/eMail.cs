@@ -12,6 +12,7 @@ namespace eMailServer {
 		private static Logger logger = LogManager.GetCurrentClassLogger();
 
 		private string _clientName = String.Empty;
+		private DateTime _time = DateTime.Now;
 		private string _from = String.Empty;
 		private List<string> _recipients = new List<string>();
 		private string _subject = String.Empty;
@@ -21,6 +22,7 @@ namespace eMailServer {
 		private MongoServer _mongoServer = null;
 
 		public string ClientName { get { return this._clientName; } }
+		public DateTime Time { get { return this._time; } }
 		public string From { get { return this._from; } }
 		public List<string> Recipients { get { return this._recipients; } }
 		public string Subject { get { return this._subject; } }
@@ -103,6 +105,9 @@ namespace eMailServer {
 						lastHeader = currentHeader;
 					}
 				} else {
+					if (trimmedLine == "..") {
+						trimmedLine = ".";
+					}
 					messageLines.Add(trimmedLine);
 				}
 			}
@@ -184,7 +189,7 @@ namespace eMailServer {
 			MongoDatabase mongoDatabase = this._mongoServer.GetDatabase("email");
 			MongoCollection mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
 
-			eMailEntity mailEntity = new eMailEntity {ClientName = this.ClientName, From = this.From, Subject = this.Subject, Recipients = this.Recipients, Header = this.Header, Message = this.Message};
+			eMailEntity mailEntity = new eMailEntity {ClientName = this.ClientName, Time = this.Time, From = this.From, Subject = this.Subject, Recipients = this.Recipients, Header = this.Header, Message = this.Message};
 			WriteConcernResult result = mongoCollection.Save(mailEntity, WriteConcern.Acknowledged);
 
 			logger.Info("WriteConcernResult: " + result.Ok);
