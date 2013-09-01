@@ -15,7 +15,7 @@ namespace eMailServer {
 		private string _from = String.Empty;
 		private List<string> _recipients = new List<string>();
 		private string _subject = String.Empty;
-		private List<string> _header = new List<string>();
+		private List<KeyValuePair<string, string>> _header = new List<KeyValuePair<string, string>>();
 		private string _message = String.Empty;
 
 		private MongoServer _mongoServer = null;
@@ -24,7 +24,7 @@ namespace eMailServer {
 		public string From { get { return this._from; } }
 		public List<string> Recipients { get { return this._recipients; } }
 		public string Subject { get { return this._subject; } }
-		public List<string> Header { get { return this._header; } }
+		public List<KeyValuePair<string, string>> Header { get { return this._header; } }
 		public string Message { get { return this._message; } }
 
 		public bool IsValid {
@@ -71,14 +71,19 @@ namespace eMailServer {
 		public void ParseData(string data) {
 			bool header = true;
 
-			this._header = new List<string>();
+			this._header = new List<KeyValuePair<string, string>>();
 			List<string> messageLines = new List<string>();
 
 			string[] lines = data.Split('\n');
+			KeyValuePair<string, string> lastHeader = new KeyValuePair<string, string>("", "");
 			foreach(string line in lines) {
 				string trimmedLine = line.Trim();
 				if (header && trimmedLine == String.Empty) {
 					header = false;
+					if (lastHeader.Key != String.Empty) {
+						this._header.Add(lastHeader);
+						lastHeader = new KeyValuePair<string, string>("", "");
+					}
 					continue;
 				}
 				if (trimmedLine == String.Empty) {
@@ -86,8 +91,17 @@ namespace eMailServer {
 				}
 
 				if (header) {
-					this._header.Add(trimmedLine);
-					this.ParseHeaderLine(trimmedLine);
+					KeyValuePair<string, string> currentHeader = this.ParseHeaderLine(trimmedLine);
+					if (currentHeader.Key == String.Empty && currentHeader.Value != String.Empty) {
+						if (lastHeader.Key != String.Empty) {
+							lastHeader = new KeyValuePair<string, string>(lastHeader.Key, lastHeader.Value + "\r\n" + currentHeader.Value);
+						}
+					} else if (currentHeader.Key != String.Empty) {
+						if (lastHeader.Key != String.Empty) {
+							this._header.Add(lastHeader);
+						}
+						lastHeader = currentHeader;
+					}
 				} else {
 					messageLines.Add(trimmedLine);
 				}
@@ -96,13 +110,45 @@ namespace eMailServer {
 			this._message = String.Join("\r\n", messageLines);
 		}
 
-		private void ParseHeaderLine(string line) {
+		private KeyValuePair<string, string> ParseHeaderLine(string line) {
+			KeyValuePair<string, string> header = new KeyValuePair<string, string>("", "");
+
 			Console.WriteLine("ParseHeaderLine(" + line + ")");
-			Match subjectMatch = Regex.Match(line, "^Subject:(.*)", RegexOptions.IgnoreCase);
-			if (subjectMatch.Success) {
-				this._subject = subjectMatch.Groups[1].Value.Trim();
-				Console.WriteLine("Subject found: " + this._subject);
+			Match headerMatch = Regex.Match(line, "^([^:]+):(.*)", RegexOptions.IgnoreCase);
+			if (headerMatch.Success) {
+				string headerKey = headerMatch.Groups[1].Value.Trim().ToUpper();
+				string headerValue = headerMatch.Groups[2].Value.Trim();
+				switch(headerKey) {
+					case "DATE":
+						header = new KeyValuePair<string, string>(headerMatch.Groups[1].Value.Trim(), headerValue);
+						Console.WriteLine("Date found: " + headerValue);
+						break;
+
+					case "FROM":
+						header = new KeyValuePair<string, string>(headerMatch.Groups[1].Value.Trim(), headerValue);
+						Console.WriteLine("From found: " + headerValue);
+						break;
+
+					case "TO":
+						header = new KeyValuePair<string, string>(headerMatch.Groups[1].Value.Trim(), headerValue);
+						Console.WriteLine("To found: " + headerValue);
+						break;
+
+					case "SUBJECT":
+						header = new KeyValuePair<string, string>(headerMatch.Groups[1].Value.Trim(), headerValue);
+						this._subject = headerValue;
+						//Console.WriteLine("Subject found: " + this._subject);
+						break;
+
+					default:
+						header = new KeyValuePair<string, string>(headerMatch.Groups[1].Value.Trim(), headerValue);
+						break;
+				}
+			} else {
+				header = new KeyValuePair<string, string>("", line.Trim());
 			}
+
+			return header;
 		}
 
 		public void SetMessage(string message) {

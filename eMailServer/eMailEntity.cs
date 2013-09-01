@@ -10,7 +10,7 @@ namespace eMailServer {
 		public string From { get; set; }
 		public List<string> Recipients { get; set; }
 		public string Subject { get; set; }
-		public List<string> Header { get; set; }
+		public List<KeyValuePair<string, string>> Header { get; set; }
 		public string Message { get; set; }
 	}
 }
