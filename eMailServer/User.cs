@@ -136,7 +136,7 @@ namespace eMailServer {
 			MongoDatabase mongoDatabase = this._mongoServer.GetDatabase("email");
 			MongoCollection<eMailEntity> mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
 
-			IMongoQuery query = Query<eMailEntity>.Where(e => e.Recipients.Contains(this.EMail));
+			IMongoQuery query = Query<eMailEntity>.Where(e => e.RecipientTo == this.EMail);
 			return mongoCollection.Count(query);
 		}
 
@@ -146,15 +146,15 @@ namespace eMailServer {
 			MongoDatabase mongoDatabase = this._mongoServer.GetDatabase("email");
 			MongoCollection<eMailEntity> mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
 
-			IMongoQuery query = Query<eMailEntity>.Where(e => e.Recipients.Contains(this.EMail));
+			IMongoQuery query = Query<eMailEntity>.Where(e => e.RecipientTo == this.EMail);
 			MongoCursor<eMailEntity> mongoCursor = mongoCollection.Find(query).SetLimit(limit);
 			foreach(eMailEntity entity in mongoCursor) {
 				eMail mail = new eMail();
 				mail.SetClientName(entity.ClientName);
-				mail.SetFrom(entity.From);
+				mail.SetFrom(entity.MailFrom);
 				mail.SetMessage(entity.Message);
-				if (entity.Recipients.Count > 0) {
-					mail.SetRecipient(entity.Recipients[0]);
+				if (entity.RecipientTo != String.Empty) {
+					mail.SetRecipient(entity.RecipientTo);
 				}
 				eMails.Add(mail);
 			}
@@ -166,7 +166,7 @@ namespace eMailServer {
 			MongoDatabase mongoDatabase = this._mongoServer.GetDatabase("email");
 			MongoCollection<eMailEntity> mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
 
-			eMailEntity mailEntity = new eMailEntity {Time = mail.Time, From = mail.From, Subject = mail.Subject, Recipients = mail.Recipients, ClientName = "eMailServer.NET", Header = mail.Header, Message = mail.Message};
+			eMailEntity mailEntity = new eMailEntity {Time = mail.Time, MailFrom = mail.MailFrom, Subject = mail.Subject, RecipientTo = mail.RecipientTo, ClientName = "eMailServer.NET", Header = mail.Header, Message = mail.Message};
 			WriteConcernResult result = mongoCollection.Insert(mailEntity, WriteConcern.Acknowledged);
 
 			logger.Info("WriteConcernResult: " + result.Ok);

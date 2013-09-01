@@ -228,15 +228,18 @@ namespace eMailServer {
 							newEMail.SetSubject(subject);
 							newEMail.SetMessage(message);
 
-							XmlMail.SetAttribute("from", newEMail.From);
+							XmlMail.SetAttribute("from", newEMail.MailFrom);
+							XmlMail.SetAttribute("to", newEMail.RecipientTo);
 							XmlMail.SetAttribute("subject", newEMail.Subject);
 
 							XmlElement XmlRecipients = this._doc.CreateElement("recipients");
+							/*
 							foreach(string recipient in newEMail.Recipients) {
 								XmlElement XmlRecipient = this._doc.CreateElement("recipient");
 								XmlRecipient.SetAttribute("email", recipient);
 								XmlRecipients.AppendChild(XmlRecipient);
 							}
+							*/
 							XmlMail.AppendChild(XmlRecipients);
 
 							XmlElement XmlMessage = this._doc.CreateElement("message");
@@ -271,16 +274,19 @@ namespace eMailServer {
 					List<eMail> eMails = this.User.GetEmails(mailLimit);
 					foreach(eMail mail in eMails) {
 						XmlElement XmlMail = this._doc.CreateElement("mail");
-						XmlMail.SetAttribute("from", mail.From);
+						XmlMail.SetAttribute("from", mail.MailFrom);
+						XmlMail.SetAttribute("to", mail.RecipientTo);
 						XmlMail.SetAttribute("client_name", mail.ClientName);
 						XmlElement XmlMessage = this._doc.CreateElement("message");
 						XmlMessage.InnerText = mail.Message;
 						XmlMail.AppendChild(XmlMessage);
 						XmlElement XmlRecipients = this._doc.CreateElement("recipients");
+						/*
 						foreach(string recipient in mail.Recipients) {
 							XmlElement XmlRecipient = this._doc.CreateElement("recipient");
 							XmlRecipient.SetAttribute("email", recipient);
 						}
+						*/
 						XmlMail.AppendChild(XmlRecipients);
 						XmlMails.AppendChild(XmlMail);
 					}
