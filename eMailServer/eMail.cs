@@ -114,7 +114,7 @@ namespace eMailServer {
 			KeyValuePair<string, string> header = new KeyValuePair<string, string>("", "");
 
 			Console.WriteLine("ParseHeaderLine(" + line + ")");
-			Match headerMatch = Regex.Match(line, "^([^:]+):(.*)", RegexOptions.IgnoreCase);
+			Match headerMatch = Regex.Match(line, @"^([^:\s]+):(.*)", RegexOptions.IgnoreCase);
 			if (headerMatch.Success) {
 				string headerKey = headerMatch.Groups[1].Value.Trim().ToUpper();
 				string headerValue = headerMatch.Groups[2].Value.Trim();
