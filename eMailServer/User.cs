@@ -166,7 +166,7 @@ namespace eMailServer {
 			MongoDatabase mongoDatabase = this._mongoServer.GetDatabase("email");
 			MongoCollection<eMailEntity> mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
 
-			eMailEntity mailEntity = new eMailEntity {Time = mail.Time, MailFrom = mail.MailFrom, Subject = mail.Subject, RecipientTo = mail.RecipientTo, ClientName = "eMailServer.NET", Header = mail.Header, Message = mail.Message};
+			eMailEntity mailEntity = new eMailEntity {Time = mail.Time, MailFrom = mail.MailFrom, Subject = mail.Subject, RecipientTo = mail.RecipientTo, ClientName = "eMailServer.NET", RawHeader = mail.RawHeader, Message = mail.Message};
 			WriteConcernResult result = mongoCollection.Insert(mailEntity, WriteConcern.Acknowledged);
 
 			logger.Info("WriteConcernResult: " + result.Ok);
