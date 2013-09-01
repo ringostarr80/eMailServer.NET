@@ -88,9 +88,6 @@ namespace eMailServer {
 					}
 					continue;
 				}
-				if (trimmedLine == String.Empty) {
-					continue;
-				}
 
 				if (header) {
 					KeyValuePair<string, string> currentHeader = this.ParseHeaderLine(trimmedLine);
