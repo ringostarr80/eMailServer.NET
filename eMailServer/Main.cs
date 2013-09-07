@@ -27,13 +27,6 @@ namespace eMailServer {
 				new AutoResetEvent(false)
 			};
 
-			//DateTime time = DateTime.Parse("Tue, 3 Sep 2013 12:01:34 +0000 (GMT)");
-			//DateTime time = DateTime.Parse("Sun, 1 Sep 2013 18:59:36 +0200 (CEST)");
-			//DateTime time = DateTime.Parse("Tue, 3 Sep 2013 12:01:34 +0200Z");
-			DateTime time = DateTime.Parse("Sun, 1 Sep 2013 18:59:36 +0000Z");
-			Console.WriteLine("Date: " + time.ToString());
-			Console.WriteLine("Date: " + DateTime.Now.ToString());
-
 			Parser parser = Parser.Default;
 			if (!parser.ParseArguments(args, Options)) {
 				LogManager.Configuration = null;

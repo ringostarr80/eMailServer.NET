@@ -13,6 +13,7 @@ namespace eMailServer {
 		public string Subject { get; set; }
 		public string Message { get; set; }
 		public eMailAddress HeaderFrom { get; set; }
+		public eMailAddress HeaderReplyTo { get; set; }
 		public List<eMailAddress> HeaderTo { get; set; }
 		public List<eMailAddress> HeaderCc { get; set; }
 		public DateTime HeaderDate { get; set; }

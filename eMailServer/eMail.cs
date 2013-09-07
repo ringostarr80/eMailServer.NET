@@ -18,6 +18,7 @@ namespace eMailServer {
 		private string _subject = String.Empty;
 		private string _message = String.Empty;
 		private eMailAddress _headerFrom = new eMailAddress();
+		private eMailAddress _headerReplyTo = null;
 		private List<eMailAddress> _headerTo = new List<eMailAddress>();
 		private List<eMailAddress> _headerCc = new List<eMailAddress>();
 		private DateTime _headerDate;
@@ -32,6 +33,7 @@ namespace eMailServer {
 		public string Subject { get { return this._subject; } }
 		public string Message { get { return this._message; } }
 		public eMailAddress HeaderFrom { get { return this._headerFrom; } }
+		public eMailAddress HeaderReplyTo { get { return this._headerReplyTo; } }
 		public List<eMailAddress> HeaderTo { get { return this._headerTo; } }
 		public List<eMailAddress> HeaderCc { get { return this._headerCc; } }
 		public DateTime HeaderDate { get { return this._headerDate; } }
@@ -119,23 +121,6 @@ namespace eMailServer {
 
 			foreach(KeyValuePair<string, string> currentHeader in this._rawHeader) {
 				switch(currentHeader.Key.ToUpper()) {
-					case "FROM":
-						eMailAddress nameAndAddressFrom = this.ParseEMailNameAndAddress(currentHeader.Value);
-						if (nameAndAddressFrom != null) {
-							this._headerFrom = nameAndAddressFrom;
-						}
-						break;
-
-					case "TO":
-						string[] headerTos = currentHeader.Value.Split('\n');
-						foreach(string headerTo in headerTos) {
-							eMailAddress nameAndAddressTo = this.ParseEMailNameAndAddress(headerTo);
-							if (nameAndAddressTo != null) {
-								this._headerTo.Add(nameAndAddressTo);
-							}
-						}
-						break;
-
 					case "CC":
 						string[] headerCcs = currentHeader.Value.Split('\n');
 						foreach(string headerCc in headerCcs) {
@@ -154,6 +139,34 @@ namespace eMailServer {
 							logger.ErrorException("error while parsing the eMail header date: " + currentHeader.Value.Trim(), e);
 						}
 						break;
+
+					case "FROM":
+						eMailAddress nameAndAddressFrom = this.ParseEMailNameAndAddress(currentHeader.Value);
+						if (nameAndAddressFrom != null) {
+							this._headerFrom = nameAndAddressFrom;
+						}
+						break;
+
+					case "REPLY-TO":
+						eMailAddress nameAndAddressReplyTo = this.ParseEMailNameAndAddress(currentHeader.Value);
+						if (nameAndAddressReplyTo != null) {
+							this._headerReplyTo = nameAndAddressReplyTo;
+						}
+						break;
+
+					case "SUBJECT":
+						this._subject = currentHeader.Value.Trim();
+						break;
+
+					case "TO":
+						string[] headerTos = currentHeader.Value.Split('\n');
+						foreach(string headerTo in headerTos) {
+							eMailAddress nameAndAddressTo = this.ParseEMailNameAndAddress(headerTo);
+							if (nameAndAddressTo != null) {
+								this._headerTo.Add(nameAndAddressTo);
+							}
+						}
+						break;
 				}
 			}
 
@@ -165,30 +178,8 @@ namespace eMailServer {
 
 			Match headerMatch = Regex.Match(line, @"^([^:\s]+):(.*)", RegexOptions.IgnoreCase);
 			if (headerMatch.Success) {
-				string headerKey = headerMatch.Groups[1].Value.Trim().ToUpper();
 				string headerValue = headerMatch.Groups[2].Value.Trim();
-				switch(headerKey) {
-					case "DATE":
-						header = new KeyValuePair<string, string>(headerMatch.Groups[1].Value.Trim(), headerValue);
-						break;
-
-					case "FROM":
-						header = new KeyValuePair<string, string>(headerMatch.Groups[1].Value.Trim(), headerValue);
-						break;
-
-					case "TO":
-						header = new KeyValuePair<string, string>(headerMatch.Groups[1].Value.Trim(), headerValue);
-						break;
-
-					case "SUBJECT":
-						header = new KeyValuePair<string, string>(headerMatch.Groups[1].Value.Trim(), headerValue);
-						this._subject = headerValue;
-						break;
-
-					default:
-						header = new KeyValuePair<string, string>(headerMatch.Groups[1].Value.Trim(), headerValue);
-						break;
-				}
+				header = new KeyValuePair<string, string>(headerMatch.Groups[1].Value.Trim(), headerValue);
 			} else {
 				header = new KeyValuePair<string, string>("", line.Trim());
 			}
@@ -198,6 +189,14 @@ namespace eMailServer {
 
 		public void SetMessage(string message) {
 			this._message = message;
+		}
+
+		public void SetReplyTo(eMailAddress mailAddress) {
+			this._headerReplyTo = mailAddress;
+		}
+
+		public void SetReplyTo(string name, string address) {
+			this._headerReplyTo = new eMailAddress(name, address);
 		}
 
 		private string ParseMailAddress(string mailAddress) {
@@ -264,10 +263,16 @@ namespace eMailServer {
 			if (this.HeaderCc.Count > 0) {
 				mailEntity.HeaderCc = this.HeaderCc;
 			}
+			if (this.HeaderReplyTo != null && this.HeaderReplyTo.Address != String.Empty) {
+				mailEntity.HeaderReplyTo = this.HeaderReplyTo;
+			}
 
-			WriteConcernResult result = mongoCollection.Save(mailEntity, WriteConcern.Acknowledged);
-
-			logger.Info("WriteConcernResult: " + result.Ok);
+			try {
+				WriteConcernResult result = mongoCollection.Save(mailEntity, WriteConcern.Acknowledged);
+				logger.Info("WriteConcernResult: " + result.Ok);
+			} catch(Exception e) {
+				Console.WriteLine("MongoCollection.Save Exception: " + e.Message);
+			}
 		}
 	}
 }

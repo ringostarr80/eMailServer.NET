@@ -167,10 +167,12 @@ namespace eMailServer {
 			MongoCollection<eMailEntity> mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
 
 			eMailAddress headerFrom = new eMailAddress(this.Username, this.EMail);
+			mail.SetReplyTo(this.Username, this.EMail);
 
 			eMailEntity mailEntity = new eMailEntity {
 				Time = mail.Time,
 				MailFrom = mail.MailFrom,
+				HeaderReplyTo = mail.HeaderReplyTo,
 				Subject = mail.Subject,
 				RecipientTo = mail.RecipientTo,
 				ClientName = "eMailServer.NET",
