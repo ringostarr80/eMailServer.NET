@@ -55,13 +55,14 @@
     <Compile Include="Options.cs" />
     <Compile Include="LimitedConcurrencyLevelTaskScheduler.cs" />
     <Compile Include="eMail.cs" />
-    <Compile Include="eMailEntity.cs" />
     <Compile Include="HttpRequestHandler.cs" />
     <Compile Include="SmtpRequestHandler.cs" />
     <Compile Include="User.cs" />
     <Compile Include="MongoDB.cs" />
-    <Compile Include="UserEntity.cs" />
     <Compile Include="RegexUtilities.cs" />
+    <Compile Include="Entities\UserEntity.cs" />
+    <Compile Include="Entities\eMailEntity.cs" />
+    <Compile Include="eMailAddress.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -80,6 +81,7 @@
     <Folder Include="files\" />
     <Folder Include="files\css\" />
     <Folder Include="files\js\" />
+    <Folder Include="Entities\" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="files\index.html" />

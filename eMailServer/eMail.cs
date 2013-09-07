@@ -16,8 +16,12 @@ namespace eMailServer {
 		private string _mailFrom = String.Empty;
 		private string _recipientTo = String.Empty;
 		private string _subject = String.Empty;
-		private List<KeyValuePair<string, string>> _rawHeader = new List<KeyValuePair<string, string>>();
 		private string _message = String.Empty;
+		private eMailAddress _headerFrom = new eMailAddress();
+		private List<eMailAddress> _headerTo = new List<eMailAddress>();
+		private List<eMailAddress> _headerCc = new List<eMailAddress>();
+		private DateTime _headerDate;
+		private List<KeyValuePair<string, string>> _rawHeader = new List<KeyValuePair<string, string>>();
 
 		private MongoServer _mongoServer = null;
 
@@ -26,8 +30,12 @@ namespace eMailServer {
 		public string MailFrom { get { return this._mailFrom; } }
 		public string RecipientTo { get { return this._recipientTo; } }
 		public string Subject { get { return this._subject; } }
-		public List<KeyValuePair<string, string>> RawHeader { get { return this._rawHeader; } }
 		public string Message { get { return this._message; } }
+		public eMailAddress HeaderFrom { get { return this._headerFrom; } }
+		public List<eMailAddress> HeaderTo { get { return this._headerTo; } }
+		public List<eMailAddress> HeaderCc { get { return this._headerCc; } }
+		public DateTime HeaderDate { get { return this._headerDate; } }
+		public List<KeyValuePair<string, string>> RawHeader { get { return this._rawHeader; } }
 
 		public bool IsValid {
 			get {
@@ -109,13 +117,52 @@ namespace eMailServer {
 				}
 			}
 
+			foreach(KeyValuePair<string, string> currentHeader in this._rawHeader) {
+				switch(currentHeader.Key.ToUpper()) {
+					case "FROM":
+						eMailAddress nameAndAddressFrom = this.ParseEMailNameAndAddress(currentHeader.Value);
+						if (nameAndAddressFrom != null) {
+							this._headerFrom = nameAndAddressFrom;
+						}
+						break;
+
+					case "TO":
+						string[] headerTos = currentHeader.Value.Split('\n');
+						foreach(string headerTo in headerTos) {
+							eMailAddress nameAndAddressTo = this.ParseEMailNameAndAddress(headerTo);
+							if (nameAndAddressTo != null) {
+								this._headerTo.Add(nameAndAddressTo);
+							}
+						}
+						break;
+
+					case "CC":
+						string[] headerCcs = currentHeader.Value.Split('\n');
+						foreach(string headerCc in headerCcs) {
+							eMailAddress nameAndAddressCc = this.ParseEMailNameAndAddress(headerCc);
+							if (nameAndAddressCc != null) {
+								this._headerCc.Add(nameAndAddressCc);
+							}
+						}
+						break;
+
+					case "DATE":
+						try {
+							string timezoneCleanedDate = Regex.Replace(currentHeader.Value.Trim(), @"\s+\((CEST|GMT|UTC)\)$", "", RegexOptions.Compiled);
+							this._headerDate = DateTime.Parse(timezoneCleanedDate);
+						} catch(Exception e) {
+							logger.ErrorException("error while parsing the eMail header date: " + currentHeader.Value.Trim(), e);
+						}
+						break;
+				}
+			}
+
 			this._message = String.Join("\r\n", messageLines);
 		}
 
 		private KeyValuePair<string, string> ParseHeaderLine(string line) {
 			KeyValuePair<string, string> header = new KeyValuePair<string, string>("", "");
 
-			Console.WriteLine("ParseHeaderLine(" + line + ")");
 			Match headerMatch = Regex.Match(line, @"^([^:\s]+):(.*)", RegexOptions.IgnoreCase);
 			if (headerMatch.Success) {
 				string headerKey = headerMatch.Groups[1].Value.Trim().ToUpper();
@@ -123,23 +170,19 @@ namespace eMailServer {
 				switch(headerKey) {
 					case "DATE":
 						header = new KeyValuePair<string, string>(headerMatch.Groups[1].Value.Trim(), headerValue);
-						Console.WriteLine("Date found: " + headerValue);
 						break;
 
 					case "FROM":
 						header = new KeyValuePair<string, string>(headerMatch.Groups[1].Value.Trim(), headerValue);
-						Console.WriteLine("From found: " + headerValue);
 						break;
 
 					case "TO":
 						header = new KeyValuePair<string, string>(headerMatch.Groups[1].Value.Trim(), headerValue);
-						Console.WriteLine("To found: " + headerValue);
 						break;
 
 					case "SUBJECT":
 						header = new KeyValuePair<string, string>(headerMatch.Groups[1].Value.Trim(), headerValue);
 						this._subject = headerValue;
-						//Console.WriteLine("Subject found: " + this._subject);
 						break;
 
 					default:
@@ -176,6 +219,25 @@ namespace eMailServer {
 			return null;
 		}
 
+		private eMailAddress ParseEMailNameAndAddress(string mailAddress) {
+			mailAddress = mailAddress.Trim();
+			if (mailAddress == String.Empty) {
+				return null;
+			}
+
+			Match eMailFieldMatch = Regex.Match(mailAddress, "(\"([^\"]*)\")?\\s*<([^>]+)>", RegexOptions.Compiled);
+			if (eMailFieldMatch.Success) {
+				try {
+					return new eMailAddress(eMailFieldMatch.Groups[2].Value, eMailFieldMatch.Groups[3].Value);
+				} catch(FormatException) {
+					logger.Error("invalid eMail address format: " + eMailFieldMatch.Groups[3].Value);
+					return null;
+				}
+			}
+
+			return null;
+		}
+
 		public void SaveToMongoDB() {
 			if (!this.IsValid) {
 				return;
@@ -186,11 +248,26 @@ namespace eMailServer {
 			MongoDatabase mongoDatabase = this._mongoServer.GetDatabase("email");
 			MongoCollection mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
 
-			eMailEntity mailEntity = new eMailEntity {ClientName = this.ClientName, Time = this.Time, MailFrom = this.MailFrom, Subject = this.Subject, RecipientTo = this.RecipientTo, RawHeader = this.RawHeader, Message = this.Message};
+			eMailEntity mailEntity = new eMailEntity {
+				ClientName = this.ClientName,
+				Time = this.Time,
+				MailFrom = this.MailFrom,
+				Subject = this.Subject,
+				RecipientTo = this.RecipientTo,
+				Message = this.Message,
+				HeaderFrom = this.HeaderFrom,
+				HeaderTo = this.HeaderTo,
+				HeaderDate = this.HeaderDate,
+				RawHeader = this.RawHeader
+			};
+
+			if (this.HeaderCc.Count > 0) {
+				mailEntity.HeaderCc = this.HeaderCc;
+			}
+
 			WriteConcernResult result = mongoCollection.Save(mailEntity, WriteConcern.Acknowledged);
 
 			logger.Info("WriteConcernResult: " + result.Ok);
 		}
 	}
 }
-

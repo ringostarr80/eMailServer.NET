@@ -1,29 +1,26 @@
 ﻿<Properties GitUserInfo="UsingMD">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="eMailServer/eMail.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="eMailServer/eMailAddress.cs">
     <Files>
       <File FileName="eMailServer/Main.cs" Line="137" Column="35" />
-      <File FileName="eMailServer/SmtpRequestHandler.cs" Line="163" Column="1" />
-      <File FileName="eMailServer/eMail.cs" Line="111" Column="98" />
-      <File FileName="eMailServer/User.cs" Line="169" Column="170" />
-      <File FileName="eMailServer/MongoDB.cs" Line="11" Column="12" />
-      <File FileName="eMailServer/files/index.html" Line="42" Column="105" />
-      <File FileName="eMailServer/files/js/index.js" Line="76" Column="23" />
-      <File FileName="eMailServer/files/css/index.css" Line="141" Column="1" />
-      <File FileName="eMailServer/HttpRequestHandler.cs" Line="232" Column="46" />
-      <File FileName="eMailServer/eMailEntity.cs" Line="13" Column="43" />
+      <File FileName="eMailServer/SmtpRequestHandler.cs" Line="1" Column="1" />
+      <File FileName="eMailServer/eMail.cs" Line="1" Column="1" />
+      <File FileName="eMailServer/User.cs" Line="1" Column="1" />
+      <File FileName="eMailServer/MongoDB.cs" Line="1" Column="1" />
+      <File FileName="eMailServer/files/index.html" Line="1" Column="1" />
+      <File FileName="eMailServer/files/js/index.js" Line="1" Column="1" />
+      <File FileName="eMailServer/files/css/index.css" Line="1" Column="1" />
+      <File FileName="eMailServer/HttpRequestHandler.cs" Line="1" Column="1" />
       <File FileName="eMailServer/Options.cs" Line="1" Column="1" />
+      <File FileName="eMailServer/Entities/eMailAddressEntity.cs" Line="6" Column="36" />
+      <File FileName="eMailServer/eMailAddress.cs" Line="17" Column="28" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
         <State expanded="True">
           <Node name="eMailServer" expanded="True">
-            <Node name="References" expanded="True" />
-            <Node name="files" expanded="True">
-              <Node name="css" expanded="True" />
-              <Node name="js" expanded="True" />
-            </Node>
-            <Node name="eMail.cs" selected="True" />
+            <Node name="Entities" expanded="True" />
+            <Node name="eMailAddress.cs" selected="True" />
           </Node>
           <Node name="HttpPostRequest" expanded="True" />
         </State>
