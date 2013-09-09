@@ -34,7 +34,7 @@ var eMailServerUI = function() {
 		var contentElement = $(rel);
 		if (contentElement.length === 1) {
 			$('header nav ul li[rel]').removeClass('active');
-			$('header nav ul li[rel="'+rel+'"]').addClass('active');
+			$('header nav ul li[rel="' + rel + '"]').addClass('active');
 			
 			$('.content').hide();
 			contentElement.show();
@@ -42,6 +42,7 @@ var eMailServerUI = function() {
 	}
 	
 	function listMailsClicked() {
+		console.log('eMailServerUI.listMailsClicked()');
 		var navElement = $(this);
 		if (navElement.hasClass('active')) {
 			return;
@@ -49,11 +50,36 @@ var eMailServerUI = function() {
 		
 		var dataAttr = navElement.attr('data-list-mails');
 		$('*[data-list-mails],#write_email').removeClass('active');
-		$('*[data-list-mails="'+dataAttr+'"]').addClass('active');
+		$('*[data-list-mails="' + dataAttr + '"]').addClass('active');
 		
 		switch(dataAttr) {
 			case 'all':
-				$.get('/mails/all?limit=50');
+				$.get('/mails/all?limit=50', function(data) {
+					var mails = $(data).find('email_server > mails > mail');
+					var mailList = $('#mail_list');
+					var tBody = mailList.find('tbody');
+						tBody.children().remove();
+					mails.each(function() {
+						var current = $(this);
+						var from = current.attr('from');
+						var subject = current.attr('subject');
+						var time = current.attr('time');
+						var headerFrom = current.find('header_from[name]');
+						if (headerFrom.length === 1) {
+							if (headerFrom.attr('name') !== '') {
+								from = headerFrom.attr('name');
+							}
+						}
+
+						var row = $('<tr></tr>');
+							row.append('<td>' + from + '</td>');
+							row.append('<td>' + subject + '</td>');
+							row.append('<td style="text-align: right;">' + time + '</td>');
+							row.append('<td>&nbsp;</td>');
+						tBody.append(row);
+					});
+					mailList.dataTable();
+				});
 				break;
 			
 			default:

@@ -153,38 +153,43 @@ namespace eMailServer {
 			}
 			
 			if (accessAllowed) {
-				switch(RequestType) {
-					case "files":
-						this.OutputFile(this.RequestRawUrl);
-						break;
-
-					case "login":
-						this.OutputFile("/files/login.html");
-						break;
-
-					case "logout":
-						this.OutputFile("/files/logout.html");
-						break;
-					
-					case "mail":
-						this.Mail(this.RequestRawUrl, this.RequestQueryString);
-						break;
-
-					case "mails":
-						this.Mails(this.RequestRawUrl, this.RequestQueryString);
-						break;
-
-					case "register":
-						this.OutputFile("/files/register.html");
-						break;
-
-					case "":
-						this.OutputFile("/files/index.html");
-						break;
-
-					default:
-						//Console.WriteLine("Error: Invalid RequestType = " + RequestType);
-						break;
+				try {
+					switch(RequestType) {
+						case "files":
+							this.OutputFile(this.RequestRawUrl);
+							break;
+	
+						case "login":
+							this.OutputFile("/files/login.html");
+							break;
+	
+						case "logout":
+							this.OutputFile("/files/logout.html");
+							break;
+						
+						case "mail":
+							this.Mail(this.RequestRawUrl, this.RequestQueryString);
+							break;
+	
+						case "mails":
+							this.Mails(this.RequestRawUrl, this.RequestQueryString);
+							break;
+	
+						case "register":
+							this.OutputFile("/files/register.html");
+							break;
+	
+						case "":
+							this.OutputFile("/files/index.html");
+							break;
+	
+						default:
+							//Console.WriteLine("Error: Invalid RequestType = " + RequestType);
+							break;
+					}
+				} catch(UnauthorizedAccessException) {
+					this.Redirect("/");
+					return;
 				}
 			} else {
 				XmlElement XmlError = this._doc.CreateElement("error");
@@ -276,17 +281,25 @@ namespace eMailServer {
 						XmlElement XmlMail = this._doc.CreateElement("mail");
 						XmlMail.SetAttribute("from", mail.MailFrom);
 						XmlMail.SetAttribute("to", mail.RecipientTo);
+						XmlMail.SetAttribute("subject", mail.Subject);
+						XmlMail.SetAttribute("time", mail.Time.ToString("yyyy-MM-dd HH:mm:ss"));
 						XmlMail.SetAttribute("client_name", mail.ClientName);
 						XmlElement XmlMessage = this._doc.CreateElement("message");
 						XmlMessage.InnerText = mail.Message;
 						XmlMail.AppendChild(XmlMessage);
+
+						XmlElement XmlHeaderFrom = this._doc.CreateElement("header_from");
+						XmlHeaderFrom.SetAttribute("name", mail.HeaderFrom.Name);
+						XmlHeaderFrom.SetAttribute("address", mail.HeaderFrom.Address);
+						XmlMail.AppendChild(XmlHeaderFrom);
+
 						XmlElement XmlRecipients = this._doc.CreateElement("recipients");
-						/*
-						foreach(string recipient in mail.Recipients) {
+						foreach(eMailAddress recipient in mail.HeaderTo) {
 							XmlElement XmlRecipient = this._doc.CreateElement("recipient");
-							XmlRecipient.SetAttribute("email", recipient);
+							XmlRecipient.SetAttribute("name", recipient.Name);
+							XmlRecipient.SetAttribute("address", recipient.Address);
+							XmlRecipients.AppendChild(XmlRecipient);
 						}
-						*/
 						XmlMail.AppendChild(XmlRecipients);
 						XmlMails.AppendChild(XmlMail);
 					}
@@ -425,6 +438,11 @@ namespace eMailServer {
 							if (postRequest.Parameters[User.COOKIE_USERNAME] != null && postRequest.Parameters[User.COOKIE_PASSWORD] != null) {
 								User user = new User();
 								if (user.RefreshByUsernamePassword(postRequest.Parameters[User.COOKIE_USERNAME], postRequest.Parameters[User.COOKIE_PASSWORD])) {
+									this.Response.SetCookie(new Cookie(User.COOKIE_USERNAME, user.Username, "/"));
+									this.Response.SetCookie(new Cookie(User.COOKIE_PASSWORD, user.Password, "/"));
+									this.Redirect("/");
+									routed = true;
+								} else if (user.RefreshByEMailPassword(postRequest.Parameters[User.COOKIE_USERNAME], postRequest.Parameters[User.COOKIE_PASSWORD])) {
 									this.Response.SetCookie(new Cookie(User.COOKIE_USERNAME, user.Username, "/"));
 									this.Response.SetCookie(new Cookie(User.COOKIE_PASSWORD, user.Password, "/"));
 									this.Redirect("/");

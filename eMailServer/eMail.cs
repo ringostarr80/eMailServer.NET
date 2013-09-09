@@ -199,6 +199,18 @@ namespace eMailServer {
 			this._headerReplyTo = new eMailAddress(name, address);
 		}
 
+		public void SetHeaderFrom(eMailAddress headerFrom) {
+			this._headerFrom = headerFrom;
+		}
+
+		public void SetHeaderTo(List<eMailAddress> headerTo) {
+			this._headerTo = headerTo;
+		}
+
+		public void SetTime(DateTime time) {
+			this._time = time;
+		}
+
 		private string ParseMailAddress(string mailAddress) {
 			mailAddress = mailAddress.Trim();
 			if (mailAddress == String.Empty) {
@@ -244,7 +256,15 @@ namespace eMailServer {
 
 			logger.Info("Saving received eMail to Database.");
 
-			MongoDatabase mongoDatabase = this._mongoServer.GetDatabase("email");
+			string userDatabase = "email";
+			if (User.EMailExists(this.RecipientTo)) {
+				string userId = User.GetIdByEMail(this.RecipientTo);
+				if (userId != String.Empty) {
+					userDatabase = "email_user_" + userId;
+				}
+			}
+
+			MongoDatabase mongoDatabase = this._mongoServer.GetDatabase(userDatabase);
 			MongoCollection mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
 
 			eMailEntity mailEntity = new eMailEntity {

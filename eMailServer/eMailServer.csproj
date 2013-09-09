@@ -90,6 +90,21 @@
     <EmbeddedResource Include="files\login.html" />
     <EmbeddedResource Include="files\register.html" />
     <EmbeddedResource Include="files\js\jquery-2.0.3.min.js" />
+    <EmbeddedResource Include="files\js\jquery.dataTables.min.js" />
+    <EmbeddedResource Include="files\css\jquery.dataTables.css" />
+    <EmbeddedResource Include="files\images\Sorting icons.psd" />
+    <EmbeddedResource Include="files\images\back_disabled.png" />
+    <EmbeddedResource Include="files\images\back_enabled.png" />
+    <EmbeddedResource Include="files\images\back_enabled_hover.png" />
+    <EmbeddedResource Include="files\images\favicon.ico" />
+    <EmbeddedResource Include="files\images\forward_disabled.png" />
+    <EmbeddedResource Include="files\images\forward_enabled.png" />
+    <EmbeddedResource Include="files\images\forward_enabled_hover.png" />
+    <EmbeddedResource Include="files\images\sort_asc.png" />
+    <EmbeddedResource Include="files\images\sort_asc_disabled.png" />
+    <EmbeddedResource Include="files\images\sort_both.png" />
+    <EmbeddedResource Include="files\images\sort_desc.png" />
+    <EmbeddedResource Include="files\images\sort_desc_disabled.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\HttpPostRequest\HttpPostRequest.csproj">

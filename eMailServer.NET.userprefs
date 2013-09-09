@@ -1,26 +1,28 @@
 ﻿<Properties GitUserInfo="UsingMD">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="eMailServer/eMailAddress.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="eMailServer/files/js/index.js">
     <Files>
-      <File FileName="eMailServer/Main.cs" Line="137" Column="35" />
+      <File FileName="eMailServer/Main.cs" Line="30" Column="4" />
       <File FileName="eMailServer/SmtpRequestHandler.cs" Line="1" Column="1" />
-      <File FileName="eMailServer/eMail.cs" Line="1" Column="1" />
-      <File FileName="eMailServer/User.cs" Line="1" Column="1" />
+      <File FileName="eMailServer/eMail.cs" Line="207" Column="30" />
+      <File FileName="eMailServer/User.cs" Line="224" Column="35" />
       <File FileName="eMailServer/MongoDB.cs" Line="1" Column="1" />
-      <File FileName="eMailServer/files/index.html" Line="1" Column="1" />
-      <File FileName="eMailServer/files/js/index.js" Line="1" Column="1" />
+      <File FileName="eMailServer/files/index.html" Line="14" Column="27" />
+      <File FileName="eMailServer/files/js/index.js" Line="59" Column="31" />
       <File FileName="eMailServer/files/css/index.css" Line="1" Column="1" />
-      <File FileName="eMailServer/HttpRequestHandler.cs" Line="1" Column="1" />
-      <File FileName="eMailServer/Options.cs" Line="1" Column="1" />
-      <File FileName="eMailServer/Entities/eMailAddressEntity.cs" Line="6" Column="36" />
-      <File FileName="eMailServer/eMailAddress.cs" Line="17" Column="28" />
+      <File FileName="eMailServer/HttpRequestHandler.cs" Line="289" Column="7" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
         <State expanded="True">
           <Node name="eMailServer" expanded="True">
-            <Node name="Entities" expanded="True" />
-            <Node name="eMailAddress.cs" selected="True" />
+            <Node name="files" expanded="True">
+              <Node name="css" expanded="True" />
+              <Node name="images" expanded="True" />
+              <Node name="js" expanded="True">
+                <Node name="index.js" selected="True" />
+              </Node>
+            </Node>
           </Node>
           <Node name="HttpPostRequest" expanded="True" />
         </State>

@@ -26,6 +26,7 @@ namespace eMailServer {
 
 		private static Logger logger = LogManager.GetCurrentClassLogger();
 
+		private string _id = String.Empty;
 		private string _username = String.Empty;
 		private string _password = String.Empty;
 		private string _eMail = String.Empty;
@@ -39,6 +40,7 @@ namespace eMailServer {
 				return (this._username != String.Empty && this._password != String.Empty && this._status == UserStatus.Active);
 			}
 		}
+		public string Id { get { return this._id; } }
 		public string Username { get { return this._username; } }
 		public string Password { get { return this._password; } }
 		public string EMail { get { return this._eMail; } }
@@ -67,11 +69,42 @@ namespace eMailServer {
 		}
 
 		public static bool NameExists(string name) {
+			MongoServer mongoServer = MyMongoDB.GetServer();
+			MongoDatabase mongoDatabase = mongoServer.GetDatabase("email");
+			MongoCollection<UserEntity> mongoCollection = mongoDatabase.GetCollection<UserEntity>("users");
+			IMongoQuery queryEMail = Query<UserEntity>.Where(e => e.Username == name);
+			UserEntity user = mongoCollection.FindOne(queryEMail);
+			if (user != null) {
+				return true;
+			}
+
 			return false;
 		}
 
 		public static bool EMailExists(string eMail) {
+			MongoServer mongoServer = MyMongoDB.GetServer();
+			MongoDatabase mongoDatabase = mongoServer.GetDatabase("email");
+			MongoCollection<UserEntity> mongoCollection = mongoDatabase.GetCollection<UserEntity>("users");
+			IMongoQuery queryEMail = Query<UserEntity>.Where(e => e.eMail == eMail);
+			UserEntity user = mongoCollection.FindOne(queryEMail);
+			if (user != null) {
+				return true;
+			}
+
 			return false;
+		}
+
+		public static string GetIdByEMail(string eMail) {
+			MongoServer mongoServer = MyMongoDB.GetServer();
+			MongoDatabase mongoDatabase = mongoServer.GetDatabase("email");
+			MongoCollection<UserEntity> mongoCollection = mongoDatabase.GetCollection<UserEntity>("users");
+			IMongoQuery queryEMail = Query<UserEntity>.Where(e => e.eMail == eMail);
+			UserEntity user = mongoCollection.FindOne(queryEMail);
+			if (user != null) {
+				return user.Id.ToString();
+			}
+
+			return String.Empty;
 		}
 
 		public bool Add() {
@@ -94,16 +127,30 @@ namespace eMailServer {
 					MongoDatabase mongoDatabase = this._mongoServer.GetDatabase("email");
 					MongoCollection<UserEntity> mongoCollection = mongoDatabase.GetCollection<UserEntity>("users");
 
-					IMongoQuery query = Query<UserEntity>.Where(e => e.Username == cookies[COOKIE_USERNAME].Value && e.Password == cookies[COOKIE_PASSWORD].Value);
-					UserEntity entity = mongoCollection.FindOne(query);
-					if (entity != null) {
-						this._username = entity.Username;
-						this._password = entity.Password;
-						this._eMail = entity.eMail;
-						this._authorization = entity.Authorization;
-						this._status = entity.Status;
+					IMongoQuery queryUsername = Query<UserEntity>.Where(e => e.Username == cookies[COOKIE_USERNAME].Value && e.Password == cookies[COOKIE_PASSWORD].Value);
+					UserEntity entityUsername = mongoCollection.FindOne(queryUsername);
+					if (entityUsername != null) {
+						this._id = entityUsername.Id.ToString();
+						this._username = entityUsername.Username;
+						this._password = entityUsername.Password;
+						this._eMail = entityUsername.eMail;
+						this._authorization = entityUsername.Authorization;
+						this._status = entityUsername.Status;
 
 						return true;
+					} else {
+						IMongoQuery queryEMail = Query<UserEntity>.Where(e => e.eMail == cookies[COOKIE_USERNAME].Value && e.Password == cookies[COOKIE_PASSWORD].Value);
+						UserEntity entityEMail = mongoCollection.FindOne(queryEMail);
+						if (entityEMail != null) {
+							this._id = entityEMail.Id.ToString();
+							this._username = entityEMail.Username;
+							this._password = entityEMail.Password;
+							this._eMail = entityEMail.eMail;
+							this._authorization = entityEMail.Authorization;
+							this._status = entityEMail.Status;
+	
+							return true;
+						}
 					}
 				}
 			}
@@ -119,6 +166,29 @@ namespace eMailServer {
 				IMongoQuery query = Query<UserEntity>.Where(e => e.Username == username && e.Password == password);
 				UserEntity entity = mongoCollection.FindOne(query);
 				if (entity != null) {
+					this._id = entity.Id.ToString();
+					this._username = entity.Username;
+					this._password = entity.Password;
+					this._eMail = entity.eMail;
+					this._authorization = entity.Authorization;
+					this._status = entity.Status;
+
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		public bool RefreshByEMailPassword(string email, string password) {
+			if (email != String.Empty && password != String.Empty) {
+				MongoDatabase mongoDatabase = this._mongoServer.GetDatabase("email");
+				MongoCollection<UserEntity> mongoCollection = mongoDatabase.GetCollection<UserEntity>("users");
+
+				IMongoQuery query = Query<UserEntity>.Where(e => e.eMail == email && e.Password == password);
+				UserEntity entity = mongoCollection.FindOne(query);
+				if (entity != null) {
+					this._id = entity.Id.ToString();
 					this._username = entity.Username;
 					this._password = entity.Password;
 					this._eMail = entity.eMail;
@@ -133,7 +203,7 @@ namespace eMailServer {
 		}
 
 		public long CountEMails() {
-			MongoDatabase mongoDatabase = this._mongoServer.GetDatabase("email");
+			MongoDatabase mongoDatabase = this._mongoServer.GetDatabase("email_user_" + this._id);
 			MongoCollection<eMailEntity> mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
 
 			IMongoQuery query = Query<eMailEntity>.Where(e => e.RecipientTo == this.EMail);
@@ -143,7 +213,7 @@ namespace eMailServer {
 		public List<eMail> GetEmails(int limit) {
 			List<eMail> eMails = new List<eMail>();
 
-			MongoDatabase mongoDatabase = this._mongoServer.GetDatabase("email");
+			MongoDatabase mongoDatabase = this._mongoServer.GetDatabase("email_user_" + this._id);
 			MongoCollection<eMailEntity> mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
 
 			IMongoQuery query = Query<eMailEntity>.Where(e => e.RecipientTo == this.EMail);
@@ -153,9 +223,11 @@ namespace eMailServer {
 				mail.SetClientName(entity.ClientName);
 				mail.SetFrom(entity.MailFrom);
 				mail.SetMessage(entity.Message);
-				if (entity.RecipientTo != String.Empty) {
-					mail.SetRecipient(entity.RecipientTo);
-				}
+				mail.SetRecipient(entity.RecipientTo);
+				mail.SetSubject(entity.Subject);
+				mail.SetHeaderFrom(entity.HeaderFrom);
+				mail.SetHeaderTo(entity.HeaderTo);
+				mail.SetTime(entity.Time);
 				eMails.Add(mail);
 			}
 
@@ -163,7 +235,7 @@ namespace eMailServer {
 		}
 
 		public void AddEMail(eMail mail) {
-			MongoDatabase mongoDatabase = this._mongoServer.GetDatabase("email");
+			MongoDatabase mongoDatabase = this._mongoServer.GetDatabase("email_user_" + this._id);
 			MongoCollection<eMailEntity> mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
 
 			eMailAddress headerFrom = new eMailAddress(this.Username, this.EMail);
