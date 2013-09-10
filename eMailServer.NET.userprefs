@@ -4,24 +4,22 @@
     <Files>
       <File FileName="eMailServer/Main.cs" Line="30" Column="4" />
       <File FileName="eMailServer/SmtpRequestHandler.cs" Line="1" Column="1" />
-      <File FileName="eMailServer/eMail.cs" Line="207" Column="30" />
-      <File FileName="eMailServer/User.cs" Line="224" Column="35" />
+      <File FileName="eMailServer/eMail.cs" Line="211" Column="22" />
+      <File FileName="eMailServer/User.cs" Line="230" Column="31" />
       <File FileName="eMailServer/MongoDB.cs" Line="1" Column="1" />
       <File FileName="eMailServer/files/index.html" Line="14" Column="27" />
-      <File FileName="eMailServer/files/js/index.js" Line="59" Column="31" />
+      <File FileName="eMailServer/files/js/index.js" Line="77" Column="43" />
       <File FileName="eMailServer/files/css/index.css" Line="1" Column="1" />
-      <File FileName="eMailServer/HttpRequestHandler.cs" Line="289" Column="7" />
+      <File FileName="eMailServer/HttpRequestHandler.cs" Line="285" Column="75" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
-        <State expanded="True">
+        <State expanded="True" selected="True">
           <Node name="eMailServer" expanded="True">
             <Node name="files" expanded="True">
               <Node name="css" expanded="True" />
               <Node name="images" expanded="True" />
-              <Node name="js" expanded="True">
-                <Node name="index.js" selected="True" />
-              </Node>
+              <Node name="js" expanded="True" />
             </Node>
           </Node>
           <Node name="HttpPostRequest" expanded="True" />

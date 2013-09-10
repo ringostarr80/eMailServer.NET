@@ -11,6 +11,7 @@ namespace eMailServer {
 	public class eMail {
 		private static Logger logger = LogManager.GetCurrentClassLogger();
 
+		private string _id = "";
 		private string _clientName = String.Empty;
 		private DateTime _time = DateTime.Now;
 		private string _mailFrom = String.Empty;
@@ -26,6 +27,7 @@ namespace eMailServer {
 
 		private MongoServer _mongoServer = null;
 
+		public string Id { get { return this._id; } }
 		public string ClientName { get { return this._clientName; } }
 		public DateTime Time { get { return this._time; } }
 		public string MailFrom { get { return this._mailFrom; } }
@@ -185,6 +187,10 @@ namespace eMailServer {
 			}
 
 			return header;
+		}
+
+		public void SetId(string id) {
+			this._id = id;
 		}
 
 		public void SetMessage(string message) {

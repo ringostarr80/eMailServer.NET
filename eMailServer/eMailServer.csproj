@@ -105,6 +105,7 @@
     <EmbeddedResource Include="files\images\sort_both.png" />
     <EmbeddedResource Include="files\images\sort_desc.png" />
     <EmbeddedResource Include="files\images\sort_desc_disabled.png" />
+    <EmbeddedResource Include="files\css\demo_table.css" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\HttpPostRequest\HttpPostRequest.csproj">

@@ -220,6 +220,7 @@ namespace eMailServer {
 			MongoCursor<eMailEntity> mongoCursor = mongoCollection.Find(query).SetLimit(limit);
 			foreach(eMailEntity entity in mongoCursor) {
 				eMail mail = new eMail();
+				mail.SetId(entity.Id.ToString());
 				mail.SetClientName(entity.ClientName);
 				mail.SetFrom(entity.MailFrom);
 				mail.SetMessage(entity.Message);

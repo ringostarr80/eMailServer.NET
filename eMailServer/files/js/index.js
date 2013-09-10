@@ -61,6 +61,7 @@ var eMailServerUI = function() {
 						tBody.children().remove();
 					mails.each(function() {
 						var current = $(this);
+						var id = current.attr('id');
 						var from = current.attr('from');
 						var subject = current.attr('subject');
 						var time = current.attr('time');
@@ -71,14 +72,21 @@ var eMailServerUI = function() {
 							}
 						}
 
-						var row = $('<tr></tr>');
+						var row = $('<tr id="' + id + '"></tr>');
 							row.append('<td>' + from + '</td>');
 							row.append('<td>' + subject + '</td>');
 							row.append('<td style="text-align: right;">' + time + '</td>');
 							row.append('<td>&nbsp;</td>');
 						tBody.append(row);
 					});
-					mailList.dataTable();
+					mailList.dataTable({
+						aaSorting: [[2, 'desc']],
+						sDom: '<"top"iflp<"clear">>rt<"bottom"ip<"clear">>'
+					});
+
+					mailList.find('tbody tr').on('click', function() {
+						console.log('row(' + $(this).attr('id') + ') clicked');
+					});
 				});
 				break;
 			

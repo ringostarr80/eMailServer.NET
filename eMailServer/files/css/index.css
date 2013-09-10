@@ -138,3 +138,18 @@ td.center {
 .table_cell {
 	display: table-cell;
 }
+
+
+/*
+ * jQuery dataTables Stylesheet
+ */
+table.dataTable {
+	border-collapse: collapse;
+}
+table.dataTable tr.odd, table.dataTable tr.odd td.sorting_1 {
+	background-color: white;
+}
+table.dataTable tbody tr:hover, table.dataTable tbody tr.odd:hover td.sorting_1 {
+	background-color: lightblue;
+	cursor: pointer;
+}

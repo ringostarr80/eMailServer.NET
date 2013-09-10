@@ -279,6 +279,7 @@ namespace eMailServer {
 					List<eMail> eMails = this.User.GetEmails(mailLimit);
 					foreach(eMail mail in eMails) {
 						XmlElement XmlMail = this._doc.CreateElement("mail");
+						XmlMail.SetAttribute("id", mail.Id);
 						XmlMail.SetAttribute("from", mail.MailFrom);
 						XmlMail.SetAttribute("to", mail.RecipientTo);
 						XmlMail.SetAttribute("subject", mail.Subject);
