@@ -112,12 +112,6 @@ namespace eMailServer {
 			XmlRoot.AppendChild(XmlRequest);
 			
 			bool accessAllowed = false;
-			if (this.Request.UrlReferrer != null) {
-				Match referrerMatch = Regex.Match(this.Request.UrlReferrer.Host, "^(localhost|127\\.0\\.0\\.1|[^\\.]+\\.locrmaps\\.com|[^\\.]+\\.locr\\.com)$");
-				if (referrerMatch.Success) {
-					accessAllowed = true;
-				}
-			}
 			if (!accessAllowed) {
 				if (this.Request.Url.Host == "localhost" || this.Request.Url.Host == "127.0.0.1") {
 					accessAllowed = true;
@@ -151,6 +145,7 @@ namespace eMailServer {
 					*/
 				}
 			}
+			accessAllowed = true;
 			
 			if (accessAllowed) {
 				try {
