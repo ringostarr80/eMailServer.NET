@@ -85,8 +85,8 @@ header nav ul.main_navigation li.active {
 	cursor: default;
 }
 #mail_folder_content {
-	background-color: lightgray;
 	color: black;
+	font-size: 12px;
 }
 
 #write_email_content {

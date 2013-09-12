@@ -1,6 +1,6 @@
 var eMailServerUI = function() {
 	function init() {
-		console.log('eMailServerUI.init()');
+		if (window.console) console.log('eMailServerUI.init()');
 		
 		$('header nav ul li[rel]').on('click', navigationClicked);
 		$('#logout').on('click', function() {location.href = "/logout/";});
@@ -42,7 +42,7 @@ var eMailServerUI = function() {
 	}
 	
 	function listMailsClicked() {
-		console.log('eMailServerUI.listMailsClicked()');
+		if (window.console) console.log('eMailServerUI.listMailsClicked()');
 		var navElement = $(this);
 		if (navElement.hasClass('active')) {
 			return;
@@ -81,11 +81,15 @@ var eMailServerUI = function() {
 					});
 					mailList.dataTable({
 						aaSorting: [[2, 'desc']],
-						sDom: '<"top"iflp<"clear">>rt<"bottom"ip<"clear">>'
+						sDom: '<"top"lp<"clear">>rt<"bottom"ip<"clear">>' // f: suche; i: showing x of y entries; l: entries per page selector
 					});
 
 					mailList.find('tbody tr').on('click', function() {
-						console.log('row(' + $(this).attr('id') + ') clicked');
+						$.get('/mail/get?id=' + $(this).attr('id'), function(data) {
+							var mail = $(data).find('email_server mail');
+							var message = mail.find('message');
+							$('#mail_content').html(message.html());
+						});
 					});
 				});
 				break;

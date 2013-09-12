@@ -35,21 +35,20 @@
 							</ul>
 						</nav>
 						<section class="table_cell" id="mail_folder_content">
-							<div class="full_table">
-								<div class="table_row" style="height: 100px;">
-									<table id="mail_list" style="width: 100%;">
-										<thead>
-											<tr>
-												<th>Name</th>
-												<th>Betreff</th>
-												<th>Zeit</th>
-												<th>Größe</th>
-											</tr>
-										</thead>
-										<tbody></tbody>
-									</table>
-								</div>
+							<div id="mail_folder">
+								<table id="mail_list" style="width: 100%;">
+									<thead>
+										<tr>
+											<th>Name</th>
+											<th>Betreff</th>
+											<th>Zeit</th>
+											<th>Größe</th>
+										</tr>
+									</thead>
+									<tbody></tbody>
+								</table>
 							</div>
+							<div id="mail_content"></div>
 						</section>
 						<section class="table_cell" id="write_email_content" style="display: none;">
 							<form action="/mail/write" method="post" enctype="multipart/form-data" target="write_email_target">

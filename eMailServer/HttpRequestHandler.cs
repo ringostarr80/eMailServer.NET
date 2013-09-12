@@ -210,6 +210,24 @@ namespace eMailServer {
 
 			rawUrl = Regex.Replace(rawUrl.Replace("/mail/", ""), "\\?.*", "", RegexOptions.Compiled);
 			switch(rawUrl) {
+				case "get":
+					if (queryString["id"] != null && queryString["id"] != String.Empty) {
+						eMail mail = this.User.GetEMail(queryString["id"]);
+						if (mail != null) {
+							XmlMail.SetAttribute("from", mail.MailFrom);
+							XmlMail.SetAttribute("to", mail.RecipientTo);
+							XmlMail.SetAttribute("subject", mail.Subject);
+
+							XmlElement XmlRecipients = this._doc.CreateElement("recipients");
+							XmlMail.AppendChild(XmlRecipients);
+
+							XmlElement XmlMessage = this._doc.CreateElement("message");
+							XmlMessage.InnerText = mail.Message;
+							XmlMail.AppendChild(XmlMessage);
+						}
+					}
+					break;
+
 				case "write":
 					if (this.Request.HttpMethod == "POST") {
 						using(HttpPostRequest.HttpPostRequest postRequest = new HttpPostRequest.HttpPostRequest(this.Request)) {

@@ -4,18 +4,19 @@
     <Files>
       <File FileName="eMailServer/Main.cs" Line="30" Column="4" />
       <File FileName="eMailServer/SmtpRequestHandler.cs" Line="1" Column="1" />
-      <File FileName="eMailServer/eMail.cs" Line="211" Column="22" />
-      <File FileName="eMailServer/User.cs" Line="230" Column="31" />
+      <File FileName="eMailServer/eMail.cs" Line="193" Column="18" />
+      <File FileName="eMailServer/User.cs" Line="223" Column="36" />
       <File FileName="eMailServer/MongoDB.cs" Line="1" Column="1" />
-      <File FileName="eMailServer/files/index.html" Line="14" Column="27" />
-      <File FileName="eMailServer/files/js/index.js" Line="77" Column="43" />
-      <File FileName="eMailServer/files/css/index.css" Line="1" Column="1" />
-      <File FileName="eMailServer/HttpRequestHandler.cs" Line="285" Column="75" />
+      <File FileName="eMailServer/files/index.html" Line="8" Column="36" />
+      <File FileName="eMailServer/files/js/index.js" Line="88" Column="7" />
+      <File FileName="eMailServer/files/css/index.css" Line="152" Column="54" />
+      <File FileName="eMailServer/HttpRequestHandler.cs" Line="282" Column="41" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
         <State expanded="True" selected="True">
           <Node name="eMailServer" expanded="True">
+            <Node name="Entities" expanded="True" />
             <Node name="files" expanded="True">
               <Node name="css" expanded="True" />
               <Node name="images" expanded="True" />

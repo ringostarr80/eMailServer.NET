@@ -235,6 +235,29 @@ namespace eMailServer {
 			return eMails;
 		}
 
+		public eMail GetEMail(string id) {
+			MongoDatabase mongoDatabase = this._mongoServer.GetDatabase("email_user_" + this._id);
+			MongoCollection<eMailEntity> mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
+
+			IMongoQuery query = Query<eMailEntity>.Where(e => e.Id == new ObjectId(id));
+			eMailEntity entity = mongoCollection.FindOne(query);
+			if (entity != null) {
+				eMail mail = new eMail();
+				mail.SetId(entity.Id.ToString());
+				mail.SetClientName(entity.ClientName);
+				mail.SetFrom(entity.MailFrom);
+				mail.SetMessage(entity.Message);
+				mail.SetRecipient(entity.RecipientTo);
+				mail.SetSubject(entity.Subject);
+				mail.SetHeaderFrom(entity.HeaderFrom);
+				mail.SetHeaderTo(entity.HeaderTo);
+				mail.SetTime(entity.Time);
+				return mail;
+			}
+
+			return null;
+		}
+
 		public void AddEMail(eMail mail) {
 			MongoDatabase mongoDatabase = this._mongoServer.GetDatabase("email_user_" + this._id);
 			MongoCollection<eMailEntity> mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
