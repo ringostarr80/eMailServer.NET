@@ -9,7 +9,7 @@ using System.Text.RegularExpressions;
 using NLog;
 
 namespace eMailServer {
-	public class SmtpRequestHandler :IRequestHandler {
+	public class SmtpRequestHandler : TcpRequestHandler.IRequestHandler {
 		private static Logger logger = LogManager.GetCurrentClassLogger();
 
 		private NetworkStream _stream = null;

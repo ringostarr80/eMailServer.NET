@@ -56,15 +56,13 @@
     <Compile Include="LimitedConcurrencyLevelTaskScheduler.cs" />
     <Compile Include="eMail.cs" />
     <Compile Include="HttpRequestHandler.cs" />
-    <Compile Include="SmtpRequestHandler.cs" />
     <Compile Include="User.cs" />
     <Compile Include="MongoDB.cs" />
     <Compile Include="RegexUtilities.cs" />
     <Compile Include="Entities\UserEntity.cs" />
     <Compile Include="Entities\eMailEntity.cs" />
     <Compile Include="eMailAddress.cs" />
-    <Compile Include="ImapRequestHandler.cs" />
-    <Compile Include="IRequestHandler.cs" />
+    <Compile Include="SmtpRequestHandler.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -113,6 +111,10 @@
     <ProjectReference Include="..\HttpPostRequest\HttpPostRequest.csproj">
       <Project>{6035A019-74FA-482D-A4E1-866AE7E2D9DB}</Project>
       <Name>HttpPostRequest</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\TcpRequestHandler\TcpRequestHandler.csproj">
+      <Project>{4C7E0285-36EE-4367-8662-B7B8D6244634}</Project>
+      <Name>TcpRequestHandler</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>

@@ -6,23 +6,19 @@ using System.Text;
 using System.Text.RegularExpressions;
 using NLog;
 
-namespace eMailServer {
-	public class ImapRequestHandler : IRequestHandler {
-		private static Logger logger = LogManager.GetCurrentClassLogger();
+namespace TcpRequestHandler {
+	public class ImapRequestHandler : TcpRequestHandler {
+		protected new static Logger logger = LogManager.GetCurrentClassLogger();
 
-		private NetworkStream _stream = null;
-		private IPEndPoint _remoteEndPoint = null;
-		private IPEndPoint _localEndPoint = null;
-		private int _messageCounter = 0;
-
-		public ImapRequestHandler() {
+		public ImapRequestHandler() : base() {
 
 		}
 
 		public ImapRequestHandler(TcpClient client) {
+			//*
 			this._remoteEndPoint = (IPEndPoint)client.Client.RemoteEndPoint;
 			this._localEndPoint = (IPEndPoint)client.Client.LocalEndPoint;
-			if (eMailServer.Options.Verbose && this._remoteEndPoint != null && this._localEndPoint != null) {
+			if (this.Verbose && this._remoteEndPoint != null && this._localEndPoint != null) {
 				logger.Debug("connected from remote [{0}:{1}] to local [{2}:{3}]",
 					this._remoteEndPoint.Address.ToString(),
 				    this._remoteEndPoint.Port,
@@ -32,7 +28,11 @@ namespace eMailServer {
 			}
 
 			this._stream = client.GetStream();
+			//*/
+		}
 
+		public override void ProcessRequest() {
+			Console.WriteLine("ImapRequestHandler.ProcessRequest()");
 			this.SendMessage("OK IMAP4rev1 Service Ready", "*");
 
 			Byte[] bytes = new Byte[1024];
@@ -43,6 +43,7 @@ namespace eMailServer {
 			string lastClientId = String.Empty;
 
 			while((i = this._stream.Read(bytes, 0, bytes.Length)) != 0) {
+				Console.WriteLine(i + " bytes read from stream.");
 				bool breakWhileLoop = false;
 				bool lastLineHasLineEnding = false;
 				List<string> lines = new List<string>();
@@ -53,7 +54,7 @@ namespace eMailServer {
 						if (lines.Count == 0 && lastLine != String.Empty) {
 							currentline = lastLine + currentline;
 						}
-						if (eMailServer.Options.Verbose) {
+						if (this.Verbose) {
 							logger.Debug("Raw incoming line: " + currentline);
 						}
 						lines.Add(currentline);
@@ -66,7 +67,7 @@ namespace eMailServer {
 							if (lines.Count == 0 && lastLine != String.Empty) {
 								currentline = lastLine + currentline;
 							}
-							if (eMailServer.Options.Verbose) {
+							if (this.Verbose) {
 								logger.Debug("Raw incoming line: " + currentline);
 							}
 							lines.Add(currentline);
@@ -75,7 +76,7 @@ namespace eMailServer {
 
 				lastLine = String.Empty;
 				string buffer = Encoding.UTF8.GetString(bytes, 0, i);
-				if (eMailServer.Options.Verbose) {
+				if (this.Verbose) {
 					logger.Debug("Raw incoming string: " + buffer);
 				}
 
@@ -152,23 +153,7 @@ namespace eMailServer {
 			}
 		}
 
-		private void SendMessage(string message, int status) {
-			byte[] msg = Encoding.UTF8.GetBytes(String.Format("{0} {1}\r\n", status, message));
-			this._stream.Write(msg, 0, msg.Length);
-			logger.Info(String.Format("[{0}:{1}] message sent: {2}", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, message));
-		}
-
-		private void SendMessage(string message, string status) {
-			byte[] msg = Encoding.UTF8.GetBytes(String.Format("{0} {1}\r\n", status, message));
-			this._stream.Write(msg, 0, msg.Length);
-			logger.Info(String.Format("[{0}:{1}] message sent: {2} {3}", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, status, message));
-		}
-
-		public void ProcessRequest() {
-
-		}
-
-		public void OutputResult() {
+		public override void OutputResult() {
 			try {
 				this.SendMessage("closing channel", 221);
 				this._stream.Close();
@@ -178,3 +163,4 @@ namespace eMailServer {
 		}
 	}
 }
+

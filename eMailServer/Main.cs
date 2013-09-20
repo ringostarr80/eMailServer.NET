@@ -11,6 +11,7 @@ using CommandLine.Text;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using NLog;
+using TcpRequestHandler;
 
 namespace eMailServer {
 	class eMailServer {
@@ -121,7 +122,7 @@ namespace eMailServer {
 					smtpListener.Start();
 					secureSmtpListener.Start();
 					imapListener.Start();
-					secureImapListener.Start();
+					//secureImapListener.Start();
 				} catch(Exception e) {
 					logger.Error("TcpListener: " + e.Message);
 					LogManager.Configuration = null;
@@ -144,7 +145,7 @@ namespace eMailServer {
 								TcpClient tcpClient = (TcpClient)context;
 								IPEndPoint endPoint = (IPEndPoint)tcpClient.Client.LocalEndPoint;
 								IRequestHandler handler;
-								if (endPoint.Port != Options.ImapPort) {
+								if (endPoint.Port != Options.ImapPort && endPoint.Port != Options.SecureImapPort) {
 									handler = new SmtpRequestHandler(tcpClient);
 								} else {
 									handler = new ImapRequestHandler(tcpClient);

@@ -1,6 +1,6 @@
 using System;
 
-namespace eMailServer {
+namespace TcpRequestHandler {
 	public interface IRequestHandler {
 		void ProcessRequest();
 		void OutputResult();
