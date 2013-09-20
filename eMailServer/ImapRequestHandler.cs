@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -9,18 +7,19 @@ using System.Text.RegularExpressions;
 using NLog;
 
 namespace eMailServer {
-	public class SmtpRequestHandler :IRequestHandler {
+	public class ImapRequestHandler : IRequestHandler {
 		private static Logger logger = LogManager.GetCurrentClassLogger();
 
 		private NetworkStream _stream = null;
 		private IPEndPoint _remoteEndPoint = null;
 		private IPEndPoint _localEndPoint = null;
+		private int _messageCounter = 0;
 
-		public SmtpRequestHandler() {
+		public ImapRequestHandler() {
 
 		}
 
-		public SmtpRequestHandler(TcpClient client) {
+		public ImapRequestHandler(TcpClient client) {
 			this._remoteEndPoint = (IPEndPoint)client.Client.RemoteEndPoint;
 			this._localEndPoint = (IPEndPoint)client.Client.LocalEndPoint;
 			if (eMailServer.Options.Verbose && this._remoteEndPoint != null && this._localEndPoint != null) {
@@ -34,20 +33,17 @@ namespace eMailServer {
 
 			this._stream = client.GetStream();
 
-			this.SendMessage("service ready", 220);
-
-			eMail mail = new eMail();
+			this.SendMessage("OK IMAP4rev1 Service Ready", "*");
 
 			Byte[] bytes = new Byte[1024];
 			char[] trimChars = new char[] {'\r', '\n'};
 			int i = 0;
 			string incomingMessage = String.Empty;
-			string mailMessage = String.Empty;
 			string lastLine = String.Empty;
-			bool dataStarted = false;
-			bool dataFinished = false;
+			string lastClientId = String.Empty;
 
 			while((i = this._stream.Read(bytes, 0, bytes.Length)) != 0) {
+				bool breakWhileLoop = false;
 				bool lastLineHasLineEnding = false;
 				List<string> lines = new List<string>();
 				int byteStartIndex = 0;
@@ -56,6 +52,9 @@ namespace eMailServer {
 						string currentline = Encoding.UTF8.GetString(bytes, byteStartIndex, byteIndex + 1 - byteStartIndex).Trim(trimChars);
 						if (lines.Count == 0 && lastLine != String.Empty) {
 							currentline = lastLine + currentline;
+						}
+						if (eMailServer.Options.Verbose) {
+							logger.Debug("Raw incoming line: " + currentline);
 						}
 						lines.Add(currentline);
 						byteStartIndex = byteIndex;
@@ -66,6 +65,9 @@ namespace eMailServer {
 							string currentline = Encoding.UTF8.GetString(bytes, byteStartIndex, byteIndex + 1 - byteStartIndex).Trim(trimChars);
 							if (lines.Count == 0 && lastLine != String.Empty) {
 								currentline = lastLine + currentline;
+							}
+							if (eMailServer.Options.Verbose) {
+								logger.Debug("Raw incoming line: " + currentline);
 							}
 							lines.Add(currentline);
 						}
@@ -78,6 +80,8 @@ namespace eMailServer {
 				}
 
 				for(int lineIndex = 0; lineIndex < lines.Count; lineIndex++) {
+					bool breakLoop = false;
+
 					incomingMessage += lines[lineIndex];
 
 					if (lineIndex == lines.Count - 1 && !lastLineHasLineEnding) {
@@ -85,60 +89,65 @@ namespace eMailServer {
 						break;
 					}
 
-					if (!dataStarted) {
-						logger.Info(String.Format("[{0}:{1}] Received: \"{2}\"", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, lines[lineIndex]));
+					logger.Info(String.Format("[{0}:{1}] Received: \"{2}\"", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, lines[lineIndex]));
 
-						if (lines[lineIndex].StartsWith("HELO ")) {
-							mail.SetClientName(lines[lineIndex].Substring(5));
-							this.SendMessage("OK", 250);
-						} else if (lines[lineIndex].StartsWith("EHLO ")) {
-								mail.SetClientName(lines[lineIndex].Substring(5));
-								this.SendMessage("Hello " + mail.ClientName, 250);
-								this.SendMessage("AUTH CRAM-MD5 LOGIN PLAIN", 250);
-							} else if (lines[lineIndex].StartsWith("MAIL FROM:")) {
-									mail.SetFrom(lines[lineIndex].Substring(10));
-									this.SendMessage("OK", 250);
-								} else if (lines[lineIndex].StartsWith("RCPT TO:")) {
-										mail.SetRecipient(lines[lineIndex].Substring(8));
-										this.SendMessage("OK", 250);
-									} else if (lines[lineIndex] == "DATA") {
-											this.SendMessage("start mail input", 354);
-											dataStarted = true;
-											dataFinished = false;
-										} else if (lines[lineIndex] == "QUIT") {
-												if (eMailServer.Options.Verbose) {
-													logger.Debug("[{0}:{1}] quit connection", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port);
-												}
-												return;
-											} else {
-												this.SendMessage("Syntax error, command unrecognized", 500);
-												if (eMailServer.Options.Verbose) {
-													logger.Debug("[{0}:{1}] unknown command: {2}", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, lines[lineIndex]);
-												}
-											}
-					} else {
-						if (lines[lineIndex] == ".") {
-							mailMessage = mailMessage.Trim();
-							logger.Info("[{0}:{1}] eMail data received: {2}", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, mailMessage);
-							dataStarted = false;
-							dataFinished = true;
+					Match clientCommandMatch = Regex.Match(lines[lineIndex], @"^([^\s]+)\s+(\w+)(\s.+)?", RegexOptions.IgnoreCase);
+					if (clientCommandMatch.Success) {
+						lastClientId = clientCommandMatch.Groups[1].Value;
 
-							mail.ParseData(mailMessage);
-							if (mail.IsValid) {
-								mail.SaveToMongoDB();
-							} else {
-								logger.Error("received message is invalid for saving to database.");
-							}
+						switch(clientCommandMatch.Groups[2].Value.ToUpper()) {
+							case "AUTHENTICATE":
+								string trimmedRest = clientCommandMatch.Groups[3].Value.Trim();
+								switch(trimmedRest.ToUpper()) {
+									case "PLAIN":
+										this.SendMessage("", "+");
+										break;
+									
+									default:
+										this.SendMessage("BAD " + clientCommandMatch.Groups[2].Value + " invalid authenticate method", lastClientId);
+										break;
+								}
+								break;
 
-							this.SendMessage("OK", 250);
-						} else {
-							mailMessage += lines[lineIndex] + "\r\n";
+							case "CAPABILITY":
+								this.SendMessage("CAPABILITY IMAP4rev1 LOGINDISABLED AUTH=PLAIN", "*");
+								this.SendMessage("OK CAPABILITY completed", lastClientId);
+								break;
+							
+							case "LOGOUT":
+								this.SendMessage("BYE IMAP4rev1 server terminating connection", "*");
+								this.SendMessage("OK LOGOUT completed", String.Format("m{0:000}", ++this._messageCounter));
+								breakLoop = true;
+								breakWhileLoop = true;
+								break;
+							
+							case "STARTTLS":
+								this.SendMessage("OK STARTTLS completed", lastClientId);
+								break;
+							
+							default:
+								this.SendMessage("BAD " + clientCommandMatch.Groups[2].Value + " command not found", lastClientId);
+								break;
 						}
+					} else {
+						/*
+						byte[] decodedBytes = Convert.FromBase64String(lines[lineIndex]);
+						Console.WriteLine("Base64 Decoded Bytes:");
+						foreach(byte decodedByte in decodedBytes) {
+							Console.Write(" " + decodedByte);
+						}
+						Console.WriteLine();
+						*/
+						this.SendMessage("BAD invalid command line: " + lines[lineIndex], lastClientId);
 					}
 
-					if (!dataStarted || dataFinished) {
-						incomingMessage = String.Empty;
+					if (breakLoop) {
+						break;
 					}
+				}
+
+				if (breakWhileLoop) {
+					break;
 				}
 			}
 		}
@@ -147,6 +156,12 @@ namespace eMailServer {
 			byte[] msg = Encoding.UTF8.GetBytes(String.Format("{0} {1}\r\n", status, message));
 			this._stream.Write(msg, 0, msg.Length);
 			logger.Info(String.Format("[{0}:{1}] message sent: {2}", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, message));
+		}
+
+		private void SendMessage(string message, string status) {
+			byte[] msg = Encoding.UTF8.GetBytes(String.Format("{0} {1}\r\n", status, message));
+			this._stream.Write(msg, 0, msg.Length);
+			logger.Info(String.Format("[{0}:{1}] message sent: {2} {3}", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, status, message));
 		}
 
 		public void ProcessRequest() {
@@ -163,4 +178,3 @@ namespace eMailServer {
 		}
 	}
 }
-

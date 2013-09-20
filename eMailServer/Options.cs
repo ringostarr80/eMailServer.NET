@@ -26,6 +26,12 @@ namespace eMailServer {
 		[Option('s', "smtp-port", DefaultValue = 25, Required = false, HelpText = "The SMTP-Port to listen.")]
 		public int SmtpPort { get; set; }
 
+		[Option('i', "imap-port", DefaultValue = 143, Required = false, HelpText = "The IMAP-Port to listen.")]
+		public int ImapPort { get; set; }
+
+		[Option('j', "secure-imap-port", DefaultValue = 993, Required = false, HelpText = "The Secure IMAP-Port to listen.")]
+		public int SecureImapPort { get; set; }
+
 		[Option('v', "verbose", DefaultValue = false, Required = false, HelpText = "Output more informations.")]
 		public bool Verbose { get; set; }
 

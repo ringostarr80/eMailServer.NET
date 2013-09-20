@@ -45,6 +45,8 @@ namespace eMailServer {
 			HttpListener httpListener = null;
 			TcpListener smtpListener = null;
 			TcpListener secureSmtpListener = null;
+			TcpListener imapListener = null;
+			TcpListener secureImapListener = null;
 			
 			LimitedConcurrencyLevelTaskScheduler taskScheduler = new LimitedConcurrencyLevelTaskScheduler(500);
 			TaskFactory factory = new TaskFactory(taskScheduler);
@@ -112,10 +114,14 @@ namespace eMailServer {
 			if (!Options.DisableSmtpServer) {
 				smtpListener = new TcpListener(IPAddress.Any, Options.SmtpPort);
 				secureSmtpListener = new TcpListener(IPAddress.Any, Options.SecureSmtpPort);
+				imapListener = new TcpListener(IPAddress.Any, Options.ImapPort);
+				//secureImapListener = new TcpListener(IPAddress.Any, Options.SecureImapPort);
 	
 				try {
 					smtpListener.Start();
 					secureSmtpListener.Start();
+					imapListener.Start();
+					secureImapListener.Start();
 				} catch(Exception e) {
 					logger.Error("TcpListener: " + e.Message);
 					LogManager.Configuration = null;
@@ -124,6 +130,8 @@ namespace eMailServer {
 	
 				logger.Info("Listening on SMTP-Port " + Options.SmtpPort);
 				logger.Info("Listening on Secure SMTP-Port " + Options.SecureSmtpPort);
+				logger.Info("Listening on IMAP-Port " + Options.ImapPort);
+				//logger.Info("Listening on Secure IMAP-Port " + Options.SecureImapPort);
 
 				Action<object> receiveRequest = (object listener) => {
 					Thread.CurrentThread.CurrentCulture = CultureInfo.CreateSpecificCulture("en-US");
@@ -132,7 +140,16 @@ namespace eMailServer {
 						try {
 							factory.StartNew((context) => {
 								Thread.CurrentThread.CurrentCulture = CultureInfo.CreateSpecificCulture("en-US");
-								SmtpRequestHandler handler = new SmtpRequestHandler((TcpClient)context);
+
+								TcpClient tcpClient = (TcpClient)context;
+								IPEndPoint endPoint = (IPEndPoint)tcpClient.Client.LocalEndPoint;
+								IRequestHandler handler;
+								if (endPoint.Port != Options.ImapPort) {
+									handler = new SmtpRequestHandler(tcpClient);
+								} else {
+									handler = new ImapRequestHandler(tcpClient);
+								}
+
 								try {
 									handler.ProcessRequest();
 								} catch(Exception e) {
@@ -161,6 +178,8 @@ namespace eMailServer {
 				// Smtp-Listener Task
 				factory.StartNew(receiveRequest, smtpListener);
 				factory.StartNew(receiveRequest, secureSmtpListener);
+				factory.StartNew(receiveRequest, imapListener);
+				//factory.StartNew(receiveRequest, secureImapListener);
 			} else {
 				((AutoResetEvent)waitHandles[1]).Set();
 			}
@@ -178,6 +197,12 @@ namespace eMailServer {
 				}
 				if (secureSmtpListener != null) {
 					secureSmtpListener.Stop();
+				}
+				if (imapListener != null) {
+					imapListener.Stop();
+				}
+				if (secureImapListener != null) {
+					secureImapListener.Stop();
 				}
 			}
 			

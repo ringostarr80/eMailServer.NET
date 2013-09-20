@@ -63,6 +63,8 @@
     <Compile Include="Entities\UserEntity.cs" />
     <Compile Include="Entities\eMailEntity.cs" />
     <Compile Include="eMailAddress.cs" />
+    <Compile Include="ImapRequestHandler.cs" />
+    <Compile Include="IRequestHandler.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
