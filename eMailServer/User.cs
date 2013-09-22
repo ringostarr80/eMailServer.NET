@@ -201,16 +201,24 @@ namespace eMailServer {
 
 			return false;
 		}
-
+		
 		public long CountEMails() {
+			return this.CountEMails("INBOX");
+		}
+
+		public long CountEMails(string directory) {
 			MongoDatabase mongoDatabase = this._mongoServer.GetDatabase("email_user_" + this._id);
 			MongoCollection<eMailEntity> mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
 
 			IMongoQuery query = Query<eMailEntity>.Where(e => e.RecipientTo == this.EMail);
 			return mongoCollection.Count(query);
 		}
-
+		
 		public List<eMail> GetEmails(int limit) {
+			return this.GetEmails(0, limit);
+		}
+
+		public List<eMail> GetEmails(int offset, int limit) {
 			List<eMail> eMails = new List<eMail>();
 
 			MongoDatabase mongoDatabase = this._mongoServer.GetDatabase("email_user_" + this._id);

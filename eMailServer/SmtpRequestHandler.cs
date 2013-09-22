@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using NLog;
+using TcpRequestHandler;
 
 namespace eMailServer {
 	public class SmtpRequestHandler : TcpRequestHandler.IRequestHandler {
@@ -15,6 +16,9 @@ namespace eMailServer {
 		private NetworkStream _stream = null;
 		private IPEndPoint _remoteEndPoint = null;
 		private IPEndPoint _localEndPoint = null;
+		
+		public event TcpRequestEventHandler Connected;
+		public event TcpRequestEventHandler Disconnected;
 
 		public SmtpRequestHandler() {
 
@@ -149,8 +153,12 @@ namespace eMailServer {
 			logger.Info(String.Format("[{0}:{1}] message sent: {2}", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, message));
 		}
 
-		public void ProcessRequest() {
+		public void Start() {
 
+		}
+		
+		public void WaitForClosing() {
+			
 		}
 
 		public void OutputResult() {

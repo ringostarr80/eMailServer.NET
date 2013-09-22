@@ -148,11 +148,12 @@ namespace eMailServer {
 								if (endPoint.Port != Options.ImapPort && endPoint.Port != Options.SecureImapPort) {
 									handler = new SmtpRequestHandler(tcpClient);
 								} else {
-									handler = new ImapRequestHandler(tcpClient);
+									handler = new ImapServer(tcpClient);
 								}
 
 								try {
-									handler.ProcessRequest();
+									handler.Start();
+									handler.WaitForClosing();
 								} catch(Exception e) {
 									logger.ErrorException(e.Message, e);
 									logger.Error(e.StackTrace);

@@ -2,8 +2,12 @@ using System;
 
 namespace TcpRequestHandler {
 	public interface IRequestHandler {
-		void ProcessRequest();
+		event TcpRequestEventHandler Connected;
+		event TcpRequestEventHandler Disconnected;
+		
+		void Start();
 		void OutputResult();
+		void WaitForClosing();
 	}
 }
 

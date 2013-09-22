@@ -39,12 +39,10 @@
     <Compile Include="IRequestHandler.cs" />
     <Compile Include="ImapRequestHandler.cs" />
     <Compile Include="TcpRequestHandler.cs" />
+    <Compile Include="FetchFields.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <None Include="NLog.dll" />
-    <None Include="NLog.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 </Project>
