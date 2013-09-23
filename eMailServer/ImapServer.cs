@@ -230,34 +230,41 @@ namespace eMailServer {
 								FetchFields fetchFields = this.ParseFetchFields(uidFetchMailMatch.Groups[3].Value);
 								
 								string fetch = String.Empty;
-								if (fetchFields.Flags) {
-									fetch+= @"FLAGS (\Seen)";
-								}
 								if (fetchFields.UID) {
-									fetch+= " UID " + uid;
+									fetch+= "UID " + uid;
 								}
-								// INTERNALDATE "17-Jul-1996 02:44:25 -0700"
-								fetch+= String.Format(" INTERNALDATE \"{0}\"", currentEMail.Time.ToString("dd-MMM-yyyy HH:mm:ss zzz"));
-								if (fetchFields.RFC822Size) {
+								//if (fetchFields.RFC822Size) {
 									fetch+= " RFC822.SIZE " + currentEMail.Message.Length;
-								}								
+								//}
+								if (fetchFields.Flags) {
+									fetch+= " FLAGS (\\Seen)";
+								}
+								//INTERNALDATE "17-Jul-1996 02:44:25 -0700"
+								//fetch+= String.Format(" INTERNALDATE \"{0}\"", currentEMail.Time.ToString("dd-MMM-yyyy HH:mm:ss zzz"));
 								if (fetchFields.Body) {
 									fetch+= " BODY";
 									string bodyString = String.Empty;
 									if (fetchFields.BodyPeek) {
-										fetch+= ".PEEK";
+										//fetch+= ".PEEK";
 										if (fetchFields.Header) {
 											fetch+= "[HEADER";
 											if (fetchFields.HeaderFields) {
-												fetch+= ".FIELDS";
+												fetch+= ".FIELDS (" + String.Join(" ", fetchFields.HeaderFieldList).ToUpper() + ")";
 												
 												bodyString+= this.BuildHeaderFields(fetchFields.HeaderFieldList, currentEMail);
 											}
 											fetch+= "]";
 										}
+									} else {
+										fetch+= "[]";
 									}
 									
-									fetch+= " {" + (bodyString.Length) + "}\r\n" + bodyString + "\r\n" + currentEMail.Message + "\r\n";
+									if (fetchFields.BodyMessage) {
+										bodyString+= this.BuildHeaderFields(fetchFields.HeaderFieldList, currentEMail);
+										bodyString+= "\r\n" + currentEMail.Message;
+									}
+									
+									fetch+= " {" + (bodyString.Length) + "}\r\n" + bodyString + "\r\n";
 								}
 								
 								this.SendMessage(uid + @" FETCH (" + fetch + ")", "*");
@@ -282,35 +289,35 @@ namespace eMailServer {
 			foreach(string headerField in headerFields) {
 				switch(headerField.ToUpper()) {
 					case "BCC":
-						bodyString+= " Bcc: \r\n";
+						bodyString+= "Bcc: \r\n";
 						break;
 						
 					case "CC":
-						bodyString+= " Cc: \r\n";
+						bodyString+= "Cc: \r\n";
 						break;
 						
 					case "DATE":
 						// Wed, 17 Jul 1996 02:23:25 -0700 (PDT)
-						bodyString+= " Date: " + currentEMail.HeaderDate.ToString("ddd, dd MMM yyyy HH:mm:ss zzz\r\n");
+						bodyString+= "Date: " + currentEMail.HeaderDate.ToString("ddd, dd MMM yyyy HH:mm:ss zzz (UTC)\r\n");
 						break;
 						
 					case "FROM":
-						bodyString+= " From: " + currentEMail.HeaderFrom.Name + " <" + currentEMail.HeaderFrom.Address + ">\r\n";
+						bodyString+= "From: \"" + currentEMail.HeaderFrom.Name + "\" <" + currentEMail.HeaderFrom.Address + ">\r\n";
 						break;
 						
 					case "SUBJECT":
-						bodyString+= " Subject: " + currentEMail.Subject + "\r\n";
+						bodyString+= "Subject: " + currentEMail.Subject + "\r\n";
 						break;
 					
 					case "TO":
 						if (currentEMail.HeaderTo.Count > 0) {
-							bodyString+= " To: ";
+							bodyString+= "To: ";
 							int headerToCounter = 0;
 							foreach(eMailAddress headerTo in currentEMail.HeaderTo) {
 								if (headerToCounter > 0) {
 									bodyString+= ", ";
 								}
-								bodyString+= headerTo.Name + " <" + headerTo.Address + ">\r\n";
+								bodyString+= "\"" + headerTo.Name + "\" <" + headerTo.Address + ">\r\n";
 								headerToCounter++;
 							}
 						}

@@ -8,6 +8,7 @@ namespace TcpRequestHandler {
 	public class FetchFields {
 		private bool _body = false;
 		private bool _bodyPeek = false;
+		private bool _bodyMessage = false;
 		private bool _header = false;
 		private bool _headerFields = false;
 		private bool _uid = false;
@@ -17,6 +18,7 @@ namespace TcpRequestHandler {
 		
 		public bool Body { get { return this._body; } }
 		public bool BodyPeek { get { return this._bodyPeek; } }
+		public bool BodyMessage { get { return this._bodyMessage; } }
 		public bool Header { get { return this._header; } }
 		public bool HeaderFields { get { return this._headerFields; } }
 		public bool UID { get { return this._uid; } }
@@ -36,8 +38,7 @@ namespace TcpRequestHandler {
 		public void Parse(string fetch) {
 			this._headerFieldList.Clear();
 			
-			Console.WriteLine("string to match: " + fetch.Replace("RFC822.SIZE", "SIZE"));
-			MatchCollection matches = Regex.Matches(fetch.Replace("RFC822.SIZE", "SIZE"), @"(\s|^)(UID|SIZE|FLAGS)(\s|$)", RegexOptions.Compiled);
+			MatchCollection matches = Regex.Matches(fetch, @"(\s|^)(UID|RFC822\.SIZE|FLAGS)(\s|$)", RegexOptions.Compiled);
 			if (matches.Count > 0) {
 				foreach(Match match in matches) {
 					Console.WriteLine("currentMatch: " + match.Groups[2].Value);
@@ -64,6 +65,20 @@ namespace TcpRequestHandler {
 				this._body = true;
 				if (bodyPeekMatch.Groups[1].Value.ToUpper() == ".PEEK") {
 					this._bodyPeek = true;
+				}
+				
+				if (bodyPeekMatch.Groups[2].Value == String.Empty) {
+					this._header = true;
+					this._bodyMessage = true;
+					this._headerFieldList.Add("Date");
+					this._headerFieldList.Add("From");
+					this._headerFieldList.Add("To");
+					this._headerFieldList.Add("Cc");
+					this._headerFieldList.Add("Bcc");
+					this._headerFieldList.Add("Subject");
+					this._headerFieldList.Add("Reply-To");
+					this._headerFieldList.Add("In-Reply-To");
+					this._headerFieldList.Add("Content-Type");
 				}
 				
 				if (bodyPeekMatch.Groups[3].Value.Trim() != String.Empty) {
