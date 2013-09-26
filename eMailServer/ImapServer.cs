@@ -198,7 +198,7 @@ namespace eMailServer {
 								if (uidCommandMatch.Groups[5].Value == String.Empty) {
 									toUid = fromUid;
 								} else if (uidCommandMatch.Groups[5].Value != "*") {
-									toUid = Convert.ToInt32(uidCommandMatch.Groups[4].Value);
+									toUid = Convert.ToInt32(uidCommandMatch.Groups[5].Value);
 								}
 								List<eMail> emails = this._user.GetEmails(fromUid, toUid);
 								int zeroMailCounter = 1;
