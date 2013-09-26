@@ -306,7 +306,12 @@ namespace eMailServer {
 						
 					case "DATE":
 						// Wed, 17 Jul 1996 02:23:25 -0700 (PDT)
-						bodyString+= "Date: " + currentEMail.HeaderDate.ToString("ddd, dd MMM yyyy HH:mm:ss zzz (UTC)\r\n");
+						Console.WriteLine(currentEMail.HeaderDate.Equals(DateTime.MinValue));
+						if (!currentEMail.HeaderDate.Equals(DateTime.MinValue)) {
+							bodyString+= "Date: " + currentEMail.HeaderDate.ToString("ddd, dd MMM yyyy HH:mm:ss zzz (UTC)\r\n");
+						} else {
+							bodyString+= "Date: " + currentEMail.Time.ToString("ddd, dd MMM yyyy HH:mm:ss zzz (UTC)\r\n");
+						}
 						break;
 						
 					case "FROM":
