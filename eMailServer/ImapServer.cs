@@ -185,21 +185,89 @@ namespace eMailServer {
 		
 		private void Uid(string uidCommand) {
 			if (this._user.IsLoggedIn) {
-				Match uidCommandMatch = Regex.Match(uidCommand, @"^([^\s]+)\s+(([0-9]+):([0-9]+|\*))\s+([\s\w\(\)]+)?", RegexOptions.IgnoreCase);
+				Match uidCommandMatch = Regex.Match(uidCommand, @"^([^\s]+)\s+(([0-9]+)(:([0-9]+|\*))?)\s+(.+)?", RegexOptions.IgnoreCase);
 				if (uidCommandMatch.Success) {
 					switch(uidCommandMatch.Groups[1].Value.ToUpper()) {
 						case "FETCH":
 							try {
+								string brackets = uidCommandMatch.Groups[6].Value.Trim(new char[] {' ', '\n', '\t', '\r', '(', ')'});
+								FetchFields fetchFields = this.ParseFetchFields(brackets);
+								
 								int fromUid = Convert.ToInt32(uidCommandMatch.Groups[3].Value);
 								int toUid = 10000;
-								if (uidCommandMatch.Groups[4].Value != "*") {
+								if (uidCommandMatch.Groups[5].Value == String.Empty) {
+									toUid = fromUid;
+								} else if (uidCommandMatch.Groups[5].Value != "*") {
 									toUid = Convert.ToInt32(uidCommandMatch.Groups[4].Value);
 								}
 								List<eMail> emails = this._user.GetEmails(fromUid, toUid);
 								int zeroMailCounter = 1;
 								int uidMailCounter = fromUid;
 								foreach(eMail mail in emails) {
-									this.SendMessage(zeroMailCounter + @" FETCH (FLAGS (\Seen) UID " + uidMailCounter + ")", "*");
+									string fetch = String.Empty;
+									bool othersThanFlags = false;
+									foreach(string field in fetchFields.FieldList) {
+										switch(field.ToUpper()) {
+											case "UID":
+												othersThanFlags = true;
+												if (fetch != String.Empty) {
+													fetch+= " ";
+												}
+												fetch+= "UID " + uidMailCounter;
+												break;
+											
+											case "RFC822.SIZE":
+												othersThanFlags = true;
+												if (fetch != String.Empty) {
+													fetch+= " ";
+												}
+												fetch+= "RFC822.SIZE " + mail.Message.Length;
+												break;
+											
+											case "FLAGS":
+												if (fetch != String.Empty) {
+													fetch+= " ";
+												}
+												fetch+= "FLAGS (\\Seen)";
+												break;
+										}
+									}
+									
+									if (fetchFields.Body) {
+										othersThanFlags = true;
+										fetch+= " BODY";
+										string bodyString = String.Empty;
+										if (fetchFields.BodyPeek) {
+											if (fetchFields.Header) {
+												fetch+= "[HEADER";
+												if (fetchFields.HeaderFields) {
+													fetch+= ".FIELDS (" + String.Join(" ", fetchFields.HeaderFieldList).ToUpper() + ")";
+													
+													bodyString+= this.BuildHeaderFields(fetchFields.HeaderFieldList, mail);
+												}
+												fetch+= "]";
+											}
+										} else {
+											fetch+= "[]";
+										}
+										
+										if (fetchFields.BodyMessage) {
+											bodyString+= this.BuildHeaderFields(fetchFields.HeaderFieldList, mail);
+											bodyString+= "\r\n" + mail.Message;
+										}
+										
+										fetch+= " {" + (bodyString.Length) + "}\r\n" + bodyString + "\r\n";
+									}
+									
+									if (!othersThanFlags) {
+										if (fetch != String.Empty) {
+											fetch+= " ";
+										}
+										fetch+= "UID " + uidMailCounter;
+									}
+									
+									this.SendMessage(zeroMailCounter + @" FETCH (" + fetch + ")", "*");
+									
 									zeroMailCounter++;
 									uidMailCounter++;
 								}
@@ -217,66 +285,6 @@ namespace eMailServer {
 						default:
 							this.SendMessage("BAD UID unknown parameter " + uidCommand, this._lastClientId);
 							break;
-					}
-				} else {
-					// 5 UID fetch 1 (UID RFC822.SIZE FLAGS BODY.PEEK[HEADER.FIELDS (From To Cc Bcc Subject Date Message-ID Priority X-Priority References Newsgroups In-Reply-To Content-Type Reply-To)])
-					Match uidFetchMailMatch = Regex.Match(uidCommand, @"^(FETCH)\s+([0-9]+)\s+\(?(.+)\)?$", RegexOptions.IgnoreCase);
-					if (uidFetchMailMatch.Success) {
-						try {
-							int uid = Convert.ToInt32(uidFetchMailMatch.Groups[2].Value);
-							List<eMail> emails = this._user.GetEmails(uid - 1, 1);
-							if (emails.Count == 1) {
-								eMail currentEMail = emails[0];
-								FetchFields fetchFields = this.ParseFetchFields(uidFetchMailMatch.Groups[3].Value);
-								
-								string fetch = String.Empty;
-								if (fetchFields.UID) {
-									fetch+= "UID " + uid;
-								}
-								//if (fetchFields.RFC822Size) {
-									fetch+= " RFC822.SIZE " + currentEMail.Message.Length;
-								//}
-								if (fetchFields.Flags) {
-									fetch+= " FLAGS (\\Seen)";
-								}
-								//INTERNALDATE "17-Jul-1996 02:44:25 -0700"
-								//fetch+= String.Format(" INTERNALDATE \"{0}\"", currentEMail.Time.ToString("dd-MMM-yyyy HH:mm:ss zzz"));
-								if (fetchFields.Body) {
-									fetch+= " BODY";
-									string bodyString = String.Empty;
-									if (fetchFields.BodyPeek) {
-										//fetch+= ".PEEK";
-										if (fetchFields.Header) {
-											fetch+= "[HEADER";
-											if (fetchFields.HeaderFields) {
-												fetch+= ".FIELDS (" + String.Join(" ", fetchFields.HeaderFieldList).ToUpper() + ")";
-												
-												bodyString+= this.BuildHeaderFields(fetchFields.HeaderFieldList, currentEMail);
-											}
-											fetch+= "]";
-										}
-									} else {
-										fetch+= "[]";
-									}
-									
-									if (fetchFields.BodyMessage) {
-										bodyString+= this.BuildHeaderFields(fetchFields.HeaderFieldList, currentEMail);
-										bodyString+= "\r\n" + currentEMail.Message;
-									}
-									
-									fetch+= " {" + (bodyString.Length) + "}\r\n" + bodyString + "\r\n";
-								}
-								
-								this.SendMessage(uid + @" FETCH (" + fetch + ")", "*");
-								this.SendMessage("OK UID FETCH completed", this._lastClientId);
-							} else {
-								this.SendMessage("OK UID FETCH completed", this._lastClientId);
-							}
-						} catch(OverflowException) {
-							this.SendMessage("BAD UID FETCH overflow exception", this._lastClientId);
-						}
-					} else {
-						this.SendMessage("BAD UID unknown parameter " + uidCommand, this._lastClientId);
 					}
 				}
 			} else {
