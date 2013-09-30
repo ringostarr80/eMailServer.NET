@@ -225,7 +225,7 @@ namespace eMailServer {
 			MongoCollection<eMailEntity> mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
 
 			IMongoQuery query = Query<eMailEntity>.Where(e => e.RecipientTo == this.EMail);
-			MongoCursor<eMailEntity> mongoCursor = mongoCollection.Find(query).SetLimit(limit);
+			MongoCursor<eMailEntity> mongoCursor = mongoCollection.Find(query).SetSkip(offset).SetLimit(limit);
 			foreach(eMailEntity entity in mongoCursor) {
 				eMail mail = new eMail();
 				mail.SetId(entity.Id.ToString());

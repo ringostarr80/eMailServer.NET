@@ -200,7 +200,7 @@ namespace eMailServer {
 								} else if (uidCommandMatch.Groups[5].Value != "*") {
 									toUid = Convert.ToInt32(uidCommandMatch.Groups[5].Value);
 								}
-								List<eMail> emails = this._user.GetEmails(fromUid, toUid);
+								List<eMail> emails = this._user.GetEmails(fromUid - 1, toUid - fromUid);
 								int zeroMailCounter = 1;
 								int uidMailCounter = fromUid;
 								foreach(eMail mail in emails) {
@@ -306,7 +306,6 @@ namespace eMailServer {
 						
 					case "DATE":
 						// Wed, 17 Jul 1996 02:23:25 -0700 (PDT)
-						Console.WriteLine(currentEMail.HeaderDate.Equals(DateTime.MinValue));
 						if (!currentEMail.HeaderDate.Equals(DateTime.MinValue)) {
 							bodyString+= "Date: " + currentEMail.HeaderDate.ToString("ddd, dd MMM yyyy HH:mm:ss zzz (UTC)\r\n");
 						} else {
