@@ -24,9 +24,7 @@ namespace eMailServer {
 	public class User {
 		public const string COOKIE_USERNAME = "email_username";
 		public const string COOKIE_PASSWORD = "email_password";
-
 		private static Logger logger = LogManager.GetCurrentClassLogger();
-
 		private string _id = String.Empty;
 		private string _username = String.Empty;
 		private string _password = String.Empty;
@@ -34,7 +32,6 @@ namespace eMailServer {
 		private List<eMailAddress> _eMailAliases = new List<eMailAddress>();
 		private UserAuthorization _authorization = UserAuthorization.Normal;
 		private UserStatus _status = UserStatus.Inactive;
-
 		private MongoServer _mongoServer = null;
 
 		public bool IsLoggedIn {
@@ -42,12 +39,19 @@ namespace eMailServer {
 				return (this._username != String.Empty && this._password != String.Empty && this._status == UserStatus.Active);
 			}
 		}
+
 		public string Id { get { return this._id; } }
+
 		public string Username { get { return this._username; } }
+
 		public string Password { get { return this._password; } }
+
 		public string eMail { get { return this._eMail; } }
+
 		public List<eMailAddress> eMailAliases { get { return this._eMailAliases; } }
+
 		public UserAuthorization Authorization { get { return this._authorization; } }
+
 		public UserStatus Status { get { return this._status; } }
 
 		public User() {
@@ -214,7 +218,8 @@ namespace eMailServer {
 			MongoCollection<eMailEntity> mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
 
 			IMongoQuery query = Query<eMailEntity>.Where(e => e.RecipientTo == this.eMail);
-			return mongoCollection.Count(query);
+			//return mongoCollection.Count(query);
+			return mongoCollection.Count();
 		}
 		
 		public List<eMail> GetEmails(int limit) {
@@ -227,8 +232,9 @@ namespace eMailServer {
 			MongoDatabase mongoDatabase = this._mongoServer.GetDatabase("email_user_" + this._id);
 			MongoCollection<eMailEntity> mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
 
-			IMongoQuery query = Query<eMailEntity>.Where(e => e.RecipientTo == this.eMail);
-			MongoCursor<eMailEntity> mongoCursor = mongoCollection.Find(query).SetSkip(offset).SetLimit(limit);
+			//IMongoQuery query = Query<eMailEntity>.Where(e => e.RecipientTo == this.eMail);
+			//MongoCursor<eMailEntity> mongoCursor = mongoCollection.Find(query).SetSkip(offset).SetLimit(limit);
+			MongoCursor<eMailEntity> mongoCursor = mongoCollection.Find().SetSkip(offset).SetLimit(limit);
 			foreach(eMailEntity entity in mongoCursor) {
 				eMail mail = new eMail();
 				mail.SetId(entity.Id.ToString());
