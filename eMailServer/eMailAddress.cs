@@ -6,6 +6,7 @@ namespace eMailServer {
 		private string _address = String.Empty;
 
 		public string Name { get { return this._name; } set { this._name = value; } }
+
 		public string Address {
 			get {
 				return this._address;
@@ -15,7 +16,7 @@ namespace eMailServer {
 				if (regexUtility.IsValidEmail(value)) {
 					this._address = value;
 				} else {
-					throw new FormatException("invalid eMail address format.");
+					throw new FormatException("invalid eMail address format => \"" + value + "\"");
 				}
 			}
 		}
