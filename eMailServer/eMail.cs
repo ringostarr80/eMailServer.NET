@@ -5,12 +5,13 @@ using System.Text;
 using System.Text.RegularExpressions;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using MongoDB.Driver.Builders;
+using MongoDB.Driver.Linq;
 using NLog;
 
 namespace eMailServer {
 	public class eMail {
 		private static Logger logger = LogManager.GetCurrentClassLogger();
-
 		private string _id = "";
 		private string _clientName = String.Empty;
 		private DateTime _time = DateTime.Now;
@@ -24,21 +25,32 @@ namespace eMailServer {
 		private List<eMailAddress> _headerCc = new List<eMailAddress>();
 		private DateTime _headerDate;
 		private List<KeyValuePair<string, string>> _rawHeader = new List<KeyValuePair<string, string>>();
-
 		private MongoServer _mongoServer = null;
 
 		public string Id { get { return this._id; } }
+
 		public string ClientName { get { return this._clientName; } }
+
 		public DateTime Time { get { return this._time; } }
+
 		public string MailFrom { get { return this._mailFrom; } }
+
 		public string RecipientTo { get { return this._recipientTo; } }
+
 		public string Subject { get { return this._subject; } }
+
 		public string Message { get { return this._message; } }
+
 		public eMailAddress HeaderFrom { get { return this._headerFrom; } }
+
 		public eMailAddress HeaderReplyTo { get { return this._headerReplyTo; } }
+
 		public List<eMailAddress> HeaderTo { get { return this._headerTo; } }
+
 		public List<eMailAddress> HeaderCc { get { return this._headerCc; } }
+
 		public DateTime HeaderDate { get { return this._headerDate; } }
+
 		public List<KeyValuePair<string, string>> RawHeader { get { return this._rawHeader; } }
 
 		public bool IsValid {
@@ -52,6 +64,21 @@ namespace eMailServer {
 
 		public eMail() {
 			this._mongoServer = MyMongoDB.GetServer();
+		}
+		
+		public eMail(eMailEntity entity) {
+			this._mongoServer = MyMongoDB.GetServer();
+			
+			this.SetClientName(entity.ClientName);
+			this.SetFrom(entity.MailFrom);
+			this.SetHeaderFrom(entity.HeaderFrom);
+			this.SetHeaderTo(entity.HeaderTo);
+			this.SetId(entity.Id.ToString());
+			this.SetMessage(entity.Message);
+			this.SetRecipient(entity.RecipientTo);
+			this.SetReplyTo(entity.HeaderReplyTo);
+			this.SetSubject(entity.Subject);
+			this.SetTime(entity.Time);
 		}
 
 		public void Send() {
@@ -108,11 +135,11 @@ namespace eMailServer {
 							lastHeader = new KeyValuePair<string, string>(lastHeader.Key, lastHeader.Value + "\r\n" + currentHeader.Value);
 						}
 					} else if (currentHeader.Key != String.Empty) {
-						if (lastHeader.Key != String.Empty) {
-							this._rawHeader.Add(lastHeader);
+							if (lastHeader.Key != String.Empty) {
+								this._rawHeader.Add(lastHeader);
+							}
+							lastHeader = currentHeader;
 						}
-						lastHeader = currentHeader;
-					}
 				} else {
 					if (trimmedLine == "..") {
 						trimmedLine = ".";
@@ -255,9 +282,9 @@ namespace eMailServer {
 			return null;
 		}
 
-		public void SaveToMongoDB() {
+		public bool SaveToMongoDB() {
 			if (!this.IsValid) {
-				return;
+				return false;
 			}
 
 			logger.Info("Saving received eMail to Database.");
@@ -269,10 +296,10 @@ namespace eMailServer {
 					userDatabase = "email_user_" + userId;
 				}
 			}
-
+			
 			MongoDatabase mongoDatabase = this._mongoServer.GetDatabase(userDatabase);
 			MongoCollection mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
-
+			
 			eMailEntity mailEntity = new eMailEntity {
 				ClientName = this.ClientName,
 				Time = this.Time,
@@ -295,9 +322,19 @@ namespace eMailServer {
 
 			try {
 				WriteConcernResult result = mongoCollection.Save(mailEntity, WriteConcern.Acknowledged);
-				logger.Info("WriteConcernResult: " + result.Ok);
+				return result.Ok;
 			} catch(Exception e) {
 				Console.WriteLine("MongoCollection.Save Exception: " + e.Message);
+				return false;
+			}
+		}
+		
+		public void AssignToUser(User user) {
+			if (this.SaveToMongoDB()) {
+				MongoDatabase mongoDatabase = this._mongoServer.GetDatabase("email");
+				MongoCollection mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
+				IMongoQuery query = Query<eMailEntity>.Where(e => e.Id == new ObjectId(this.Id));
+				mongoCollection.Remove(query);
 			}
 		}
 	}

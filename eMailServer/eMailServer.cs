@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
 using System.Net;
@@ -41,6 +42,10 @@ namespace eMailServer {
 				Console.WriteLine("MongoConnectionException: " + e.Message);
 				LogManager.Configuration = null;
 				return;
+			}
+			
+			if (Options.Check) {
+				Check();
 			}
 			
 			HttpListener httpListener = null;
@@ -213,6 +218,28 @@ namespace eMailServer {
 			}
 			
 			LogManager.Configuration = null;
+		}
+		
+		private static void Check() {
+			Console.WriteLine("running precheck...");
+			
+			MongoServer mongoServer = MyMongoDB.GetServer();
+			
+			MongoDatabase mongoDatabase = mongoServer.GetDatabase("email");
+			MongoCollection<eMailEntity> mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
+			
+			MongoCursor<eMailEntity> mongoCursor = mongoCollection.FindAll();
+			foreach(eMailEntity entity in mongoCursor) {
+				if (User.EMailExists(entity.RecipientTo)) {
+					Console.WriteLine("user with email-address found: " + entity.RecipientTo);
+					User newMailUser = new User();
+					newMailUser.RefreshById(User.GetIdByEMail(entity.RecipientTo));
+					eMail mail = new eMail(entity);
+					mail.AssignToUser(newMailUser);
+				}
+			}
+			
+			Console.WriteLine("precheck finished...");
 		}
 	}
 }

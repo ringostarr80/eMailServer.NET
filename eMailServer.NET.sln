@@ -31,11 +31,11 @@ Global
 		Policies = $0
 		$0.DotNetNamingPolicy = $1
 		$1.DirectoryNamespaceAssociation = None
-		$1.ResourceNamePolicy = FileFormatDefault
+		$1.ResourceNamePolicy = FileName
 		$0.TextStylePolicy = $2
 		$2.FileWidth = 120
-		$2.TabsToSpaces = False
-		$2.inheritsSet = VisualStudio
+		$2.TabWidth = 4
+		$2.inheritsSet = Mono
 		$2.inheritsScope = text/plain
 		$2.scope = text/x-csharp
 		$0.CSharpFormattingPolicy = $3
@@ -55,7 +55,6 @@ Global
 		$3.WhileBraceForcement = AddBraces
 		$3.UsingBraceForcement = AddBraces
 		$3.FixedBraceForcement = AddBraces
-		$3.ElseIfNewLinePlacement = SameLine
 		$3.BeforeMethodDeclarationParentheses = False
 		$3.BeforeMethodCallParentheses = False
 		$3.BeforeConstructorDeclarationParentheses = False

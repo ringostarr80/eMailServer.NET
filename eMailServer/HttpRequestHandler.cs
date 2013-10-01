@@ -241,7 +241,7 @@ namespace eMailServer {
 							}
 
 							eMail newEMail = new eMail();
-							newEMail.SetFrom(this.User.EMail);
+							newEMail.SetFrom(this.User.eMail);
 							newEMail.SetRecipient(toEMail);
 							newEMail.SetSubject(subject);
 							newEMail.SetMessage(message);

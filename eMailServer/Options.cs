@@ -11,6 +11,9 @@ namespace eMailServer {
 		[Option('a', "db-address", DefaultValue = "localhost", Required = false, HelpText = "The database address where to connect.")]
 		public string DatabaseAddress { get; set; }
 		
+		[Option('c', "check", DefaultValue = false, Required = false, HelpText = "run a precheck, that reassigns undelivered emails, if possible.")]
+		public bool Check { get; set; }
+		
 		[Option('d', "disable-http-server", DefaultValue = false, Required = false, HelpText = "Disable the HTTP-Server.")]
 		public bool DisableHttpServer { get; set; }
 		
