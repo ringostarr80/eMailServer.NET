@@ -113,6 +113,19 @@ namespace eMailServer {
 
 			return String.Empty;
 		}
+		
+		public static string GetIdByName(string name) {
+			MongoServer mongoServer = MyMongoDB.GetServer();
+			MongoDatabase mongoDatabase = mongoServer.GetDatabase("email");
+			MongoCollection<UserEntity> mongoCollection = mongoDatabase.GetCollection<UserEntity>("users");
+			IMongoQuery queryEMail = Query<UserEntity>.Where(u => u.Username == name);
+			UserEntity user = mongoCollection.FindOne(queryEMail);
+			if (user != null) {
+				return user.Id.ToString();
+			}
+
+			return String.Empty;
+		}
 
 		public bool Add() {
 			logger.Info("adding User to Database.");

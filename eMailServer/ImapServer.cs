@@ -11,17 +11,17 @@ using TcpRequestHandler;
 namespace eMailServer {
 	public class ImapServer : ImapRequestHandler {
 		protected new static Logger logger = LogManager.GetCurrentClassLogger();
-		
 		private User _user = new User();
 		private ImapState _state = ImapState.Default;
 		private string _lastClientId = String.Empty;
+		private string _currentCramMD5Challenge = String.Empty;
 		
 		public ImapServer() : base() {
 			
 		}
 		
 		public ImapServer(TcpClient client) : base(client) {
-			this.Connected+= (object sender, TcpRequestEventArgs e) => {
+			this.Connected += (object sender, TcpRequestEventArgs e) => {
 				if (this.Verbose && e.RemoteEndPoint != null && e.LocalEndPoint != null) {
 					logger.Debug("connected from remote [{0}:{1}] to local [{2}:{3}]",
 						e.RemoteEndPoint.Address.ToString(),
@@ -34,7 +34,7 @@ namespace eMailServer {
 				this.SendMessage("OK IMAP4rev1 Service Ready", "*");
 			};
 			
-			this.Disconnected+= (object sender, TcpRequestEventArgs e) => {
+			this.Disconnected += (object sender, TcpRequestEventArgs e) => {
 				if (this.Verbose && e.RemoteEndPoint != null && e.LocalEndPoint != null) {
 					logger.Debug("disconnected from remote [{0}:{1}] to local [{2}:{3}]",
 						e.RemoteEndPoint.Address.ToString(),
@@ -45,29 +45,48 @@ namespace eMailServer {
 				}
 			};
 			
-			this.LineReceived+= (object sender, TcpLineReceivedEventArgs e) => {
+			this.LineReceived += (object sender, TcpLineReceivedEventArgs e) => {
 				logger.Info(String.Format("[{0}:{1}] Received Line: \"{2}\"", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, e.Line));
 				
 				switch(this._state) {
-					case ImapState.AuthenticatePlain:
-						byte[] decodedBytesAuth = Convert.FromBase64String(e.Line);
-						List<string> words = new List<string>();
-						List<byte> byteWord = new List<byte>();
-						foreach(byte currentByte in decodedBytesAuth) {
-							if (currentByte == 0) {
-								if (byteWord.Count > 0) {
-									words.Add(Encoding.UTF8.GetString(byteWord.ToArray()));
+					case ImapState.AuthenticateCramMD5:
+						List<string> wordsCramMD5 = this.GetWordsFromBase64EncodedLine(e.Line);
+						
+						this._state = ImapState.Default;
+						if (wordsCramMD5.Count == 1) {
+							string[] splittedWords = wordsCramMD5[0].Split(new char[] {' '});
+							if (splittedWords.Length == 2) {
+								bool nameExists = User.NameExists(splittedWords[0]);
+								bool eMailExists = User.EMailExists(splittedWords[0]);
+								if (nameExists || eMailExists) {
+									string userId = (nameExists) ? User.GetIdByName(splittedWords[0]) : User.GetIdByEMail(splittedWords[0]);
+									User tmpUser = new User();
+									if (tmpUser.RefreshById(userId)) {
+										string calculatedDigest = this.CalculateCramMD5Digest(tmpUser.Password, this._currentCramMD5Challenge);
+										if (calculatedDigest == splittedWords[1]) {
+											this._user = tmpUser;
+											this.SendMessage("OK PLAIN AUTHENTICATION successful", this._lastClientId);
+										} else {
+											this.SendMessage("NO invalid authentication", this._lastClientId);
+										}
+									} else {
+										this.SendMessage("NO invalid authentication", this._lastClientId);
+									}
+								} else {
+									this.SendMessage("NO invalid authentication", this._lastClientId);
 								}
-								
-								byteWord = new List<byte>();
-								continue;
+							} else {
+								this.SendMessage("NO invalid authentication", this._lastClientId);
 							}
-							
-							byteWord.Add(currentByte);
+						} else {
+							this.SendMessage("NO invalid authentication", this._lastClientId);
 						}
-						if (byteWord.Count > 0) {
-							words.Add(Encoding.UTF8.GetString(byteWord.ToArray()));
-						}
+						
+						this._currentCramMD5Challenge = String.Empty;
+						break;
+						
+					case ImapState.AuthenticatePlain:
+						List<string> words = this.GetWordsFromBase64EncodedLine(e.Line);
 						
 						this._state = ImapState.Default;
 						if (words.Count == 2) {
@@ -80,6 +99,8 @@ namespace eMailServer {
 							} else {
 								this.SendMessage("NO invalid authentication", this._lastClientId);
 							}
+						} else {
+							this.SendMessage("NO invalid authentication", this._lastClientId);
 						}
 						break;
 					
@@ -94,7 +115,7 @@ namespace eMailServer {
 									break;
 		
 								case "CAPABILITY":
-									this.SendMessage("CAPABILITY IMAP4rev1 LOGINDISABLED AUTH=PLAIN", "*");
+									this.SendMessage("CAPABILITY IMAP4rev1 LOGINDISABLED AUTH=PLAIN AUTH=CRAM-MD5", "*");
 									this.SendMessage("OK CAPABILITY completed", this._lastClientId);
 									break;
 								
@@ -141,8 +162,15 @@ namespace eMailServer {
 		private void Authenticate(string authenticateMethod) {
 			switch(authenticateMethod) {
 				case "PLAIN":
-					this.SendMessage("", "+");
 					this._state = ImapState.AuthenticatePlain;
+					this.SendMessage("", "+");
+					break;
+				
+				case "CRAM-MD5":
+					this._state = ImapState.AuthenticateCramMD5;
+					string base64EncodedCramMD5Challenge = this.CalculateOneTimeBase64Challenge("localhost.de");
+					this._currentCramMD5Challenge = Encoding.UTF8.GetString(Convert.FromBase64String(base64EncodedCramMD5Challenge));
+					this.SendMessage(base64EncodedCramMD5Challenge, "+");
 					break;
 				
 				default:
@@ -198,8 +226,8 @@ namespace eMailServer {
 								if (uidCommandMatch.Groups[5].Value == String.Empty) {
 									toUid = fromUid;
 								} else if (uidCommandMatch.Groups[5].Value != "*") {
-									toUid = Convert.ToInt32(uidCommandMatch.Groups[5].Value);
-								}
+										toUid = Convert.ToInt32(uidCommandMatch.Groups[5].Value);
+									}
 								List<eMail> emails = this._user.GetEmails(fromUid - 1, toUid - fromUid);
 								int zeroMailCounter = 1;
 								int uidMailCounter = fromUid;
@@ -211,59 +239,59 @@ namespace eMailServer {
 											case "UID":
 												othersThanFlags = true;
 												if (fetch != String.Empty) {
-													fetch+= " ";
+													fetch += " ";
 												}
-												fetch+= "UID " + uidMailCounter;
+												fetch += "UID " + uidMailCounter;
 												break;
 											
 											case "RFC822.SIZE":
 												othersThanFlags = true;
 												if (fetch != String.Empty) {
-													fetch+= " ";
+													fetch += " ";
 												}
-												fetch+= "RFC822.SIZE " + mail.Message.Length;
+												fetch += "RFC822.SIZE " + mail.Message.Length;
 												break;
 											
 											case "FLAGS":
 												if (fetch != String.Empty) {
-													fetch+= " ";
+													fetch += " ";
 												}
-												fetch+= "FLAGS (\\Seen)";
+												fetch += "FLAGS (\\Seen)";
 												break;
 										}
 									}
 									
 									if (fetchFields.Body) {
 										othersThanFlags = true;
-										fetch+= " BODY";
+										fetch += " BODY";
 										string bodyString = String.Empty;
 										if (fetchFields.BodyPeek) {
 											if (fetchFields.Header) {
-												fetch+= "[HEADER";
+												fetch += "[HEADER";
 												if (fetchFields.HeaderFields) {
-													fetch+= ".FIELDS (" + String.Join(" ", fetchFields.HeaderFieldList).ToUpper() + ")";
+													fetch += ".FIELDS (" + String.Join(" ", fetchFields.HeaderFieldList).ToUpper() + ")";
 													
-													bodyString+= this.BuildHeaderFields(fetchFields.HeaderFieldList, mail);
+													bodyString += this.BuildHeaderFields(fetchFields.HeaderFieldList, mail);
 												}
-												fetch+= "]";
+												fetch += "]";
 											}
 										} else {
-											fetch+= "[]";
+											fetch += "[]";
 										}
 										
 										if (fetchFields.BodyMessage) {
-											bodyString+= this.BuildHeaderFields(fetchFields.HeaderFieldList, mail);
-											bodyString+= "\r\n" + mail.Message;
+											bodyString += this.BuildHeaderFields(fetchFields.HeaderFieldList, mail);
+											bodyString += "\r\n" + mail.Message;
 										}
 										
-										fetch+= " {" + (bodyString.Length) + "}\r\n" + bodyString + "\r\n";
+										fetch += " {" + (bodyString.Length) + "}\r\n" + bodyString + "\r\n";
 									}
 									
 									if (!othersThanFlags) {
 										if (fetch != String.Empty) {
-											fetch+= " ";
+											fetch += " ";
 										}
-										fetch+= "UID " + uidMailCounter;
+										fetch += "UID " + uidMailCounter;
 									}
 									
 									this.SendMessage(zeroMailCounter + @" FETCH (" + fetch + ")", "*");
@@ -297,39 +325,39 @@ namespace eMailServer {
 			foreach(string headerField in headerFields) {
 				switch(headerField.ToUpper()) {
 					case "BCC":
-						bodyString+= "Bcc: \r\n";
+						bodyString += "Bcc: \r\n";
 						break;
 						
 					case "CC":
-						bodyString+= "Cc: \r\n";
+						bodyString += "Cc: \r\n";
 						break;
 						
 					case "DATE":
 						// Wed, 17 Jul 1996 02:23:25 -0700 (PDT)
 						if (!currentEMail.HeaderDate.Equals(DateTime.MinValue)) {
-							bodyString+= "Date: " + currentEMail.HeaderDate.ToString("ddd, dd MMM yyyy HH:mm:ss zzz (UTC)\r\n");
+							bodyString += "Date: " + currentEMail.HeaderDate.ToString("ddd, dd MMM yyyy HH:mm:ss zzz (UTC)\r\n");
 						} else {
-							bodyString+= "Date: " + currentEMail.Time.ToString("ddd, dd MMM yyyy HH:mm:ss zzz (UTC)\r\n");
+							bodyString += "Date: " + currentEMail.Time.ToString("ddd, dd MMM yyyy HH:mm:ss zzz (UTC)\r\n");
 						}
 						break;
 						
 					case "FROM":
-						bodyString+= "From: \"" + currentEMail.HeaderFrom.Name + "\" <" + currentEMail.HeaderFrom.Address + ">\r\n";
+						bodyString += "From: \"" + currentEMail.HeaderFrom.Name + "\" <" + currentEMail.HeaderFrom.Address + ">\r\n";
 						break;
 						
 					case "SUBJECT":
-						bodyString+= "Subject: " + currentEMail.Subject + "\r\n";
+						bodyString += "Subject: " + currentEMail.Subject + "\r\n";
 						break;
 					
 					case "TO":
 						if (currentEMail.HeaderTo.Count > 0) {
-							bodyString+= "To: ";
+							bodyString += "To: ";
 							int headerToCounter = 0;
 							foreach(eMailAddress headerTo in currentEMail.HeaderTo) {
 								if (headerToCounter > 0) {
-									bodyString+= ", ";
+									bodyString += ", ";
 								}
-								bodyString+= "\"" + headerTo.Name + "\" <" + headerTo.Address + ">\r\n";
+								bodyString += "\"" + headerTo.Name + "\" <" + headerTo.Address + ">\r\n";
 								headerToCounter++;
 							}
 						}
