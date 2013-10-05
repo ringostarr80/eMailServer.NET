@@ -54,6 +54,10 @@ namespace eMailServer {
 			TcpListener imapListener = null;
 			TcpListener secureImapListener = null;
 			
+			if (Options.ServerCertificateFilename != String.Empty) {
+				TcpRequestHandler.TcpRequestHandler.ServerCertificateFilename = Options.ServerCertificateFilename;
+			}
+			
 			LimitedConcurrencyLevelTaskScheduler taskScheduler = new LimitedConcurrencyLevelTaskScheduler(500);
 			TaskFactory factory = new TaskFactory(taskScheduler);
 			
@@ -121,13 +125,13 @@ namespace eMailServer {
 				smtpListener = new TcpListener(IPAddress.Any, Options.SmtpPort);
 				secureSmtpListener = new TcpListener(IPAddress.Any, Options.SecureSmtpPort);
 				imapListener = new TcpListener(IPAddress.Any, Options.ImapPort);
-				//secureImapListener = new TcpListener(IPAddress.Any, Options.SecureImapPort);
+				secureImapListener = new TcpListener(IPAddress.Any, Options.SecureImapPort);
 	
 				try {
 					smtpListener.Start();
 					secureSmtpListener.Start();
 					imapListener.Start();
-					//secureImapListener.Start();
+					secureImapListener.Start();
 				} catch(Exception e) {
 					logger.Error("TcpListener: " + e.Message);
 					LogManager.Configuration = null;
@@ -137,7 +141,7 @@ namespace eMailServer {
 				logger.Info("Listening on SMTP-Port " + Options.SmtpPort);
 				logger.Info("Listening on Secure SMTP-Port " + Options.SecureSmtpPort);
 				logger.Info("Listening on IMAP-Port " + Options.ImapPort);
-				//logger.Info("Listening on Secure IMAP-Port " + Options.SecureImapPort);
+				logger.Info("Listening on Secure IMAP-Port " + Options.SecureImapPort);
 
 				Action<object> receiveRequest = (object listener) => {
 					Thread.CurrentThread.CurrentCulture = CultureInfo.CreateSpecificCulture("en-US");
@@ -153,7 +157,7 @@ namespace eMailServer {
 								if (endPoint.Port != Options.ImapPort && endPoint.Port != Options.SecureImapPort) {
 									handler = new SmtpRequestHandler(tcpClient);
 								} else {
-									handler = new ImapServer(tcpClient);
+									handler = new ImapServer(tcpClient, Options.SecureImapPort);
 								}
 
 								try {
@@ -186,7 +190,7 @@ namespace eMailServer {
 				factory.StartNew(receiveRequest, smtpListener);
 				factory.StartNew(receiveRequest, secureSmtpListener);
 				factory.StartNew(receiveRequest, imapListener);
-				//factory.StartNew(receiveRequest, secureImapListener);
+				factory.StartNew(receiveRequest, secureImapListener);
 			} else {
 				((AutoResetEvent)waitHandles[1]).Set();
 			}

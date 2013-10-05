@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 
@@ -19,10 +20,14 @@ namespace TcpRequestHandler {
 		private const byte OuterPadding = 0x5C;
 		
 		public ImapRequestHandler() : base() {
-
+			
 		}
 
 		public ImapRequestHandler(TcpClient client) : base(client) {
+			
+		}
+		
+		public ImapRequestHandler(TcpClient client, int imapSslPort) : base(client, imapSslPort) {
 			
 		}
 		
@@ -33,7 +38,11 @@ namespace TcpRequestHandler {
 		public override void OutputResult() {
 			try {
 				this.OnTcpRequestDisconnected(new TcpRequestEventArgs(this._remoteEndPoint, this._localEndPoint));
-				this._stream.Close();
+				if (this._localEndPoint.Port == this._imapSslPort) {
+					this._sslStream.Close();
+				} else {
+					this._stream.Close();
+				}
 			} catch(Exception e) {
 				logger.Trace(e.Message);
 			} finally {

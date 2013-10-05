@@ -20,7 +20,7 @@ namespace eMailServer {
 			
 		}
 		
-		public ImapServer(TcpClient client) : base(client) {
+		public ImapServer(TcpClient client, int imapSslPort) : base(client, imapSslPort) {
 			this.Connected += (object sender, TcpRequestEventArgs e) => {
 				if (this.Verbose && e.RemoteEndPoint != null && e.LocalEndPoint != null) {
 					logger.Debug("connected from remote [{0}:{1}] to local [{2}:{3}]",
@@ -115,7 +115,7 @@ namespace eMailServer {
 									break;
 		
 								case "CAPABILITY":
-									this.SendMessage("CAPABILITY IMAP4rev1 LOGINDISABLED AUTH=PLAIN AUTH=CRAM-MD5", "*");
+									this.SendMessage("CAPABILITY IMAP4rev1 STARTTLS LOGINDISABLED AUTH=PLAIN AUTH=CRAM-MD5", "*");
 									this.SendMessage("OK CAPABILITY completed", this._lastClientId);
 									break;
 								
@@ -140,7 +140,9 @@ namespace eMailServer {
 									break;
 								
 								case "STARTTLS":
-									this.SendMessage("OK STARTTLS completed", this._lastClientId);
+									//this.SendMessage("OK STARTTLS completed", this._lastClientId);
+									this.SendMessage("OK Begin TLS negotiation now", this._lastClientId);
+									//this.SendMessage("NO STARTTLS not supported", this._lastClientId);
 									break;
 								
 								case "UID":
