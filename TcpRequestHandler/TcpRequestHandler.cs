@@ -47,6 +47,7 @@ namespace TcpRequestHandler {
 	public delegate void TcpLineReceivedEventHandler(object sender, TcpLineReceivedEventArgs e);
 	
 	public class TcpRequestHandler : IRequestHandler {
+		private static string _serverCertificateFilename = String.Empty;
 		protected static X509Certificate _serverCertificate = null;
 		protected int _imapSslPort = 993;
 		protected WaitHandle[] _waitHandles = new WaitHandle[] {
@@ -59,7 +60,7 @@ namespace TcpRequestHandler {
 		protected int _messageCounter = 0;
 		protected bool _verbose = true;
 		protected SslStream _sslStream = null;
-		public static string ServerCertificateFilename = String.Empty;
+		public static string ServerCertificateFilename { get { return _serverCertificateFilename; } }
 
 		public bool Verbose { get { return this._verbose; } set { this._verbose = value; } }
 		
@@ -197,6 +198,10 @@ namespace TcpRequestHandler {
 		/// Perform the server handshake
 		/// </summary>
 		private void ServerSideHandshake() {
+			if (_serverCertificate == null) {
+				return;
+			}
+
 			SecureString secureString = new SecureString();
 			secureString.AppendChar('l');
 			secureString.AppendChar('x');
@@ -216,13 +221,7 @@ namespace TcpRequestHandler {
 			secureString.AppendChar('1');
 			secureString.AppendChar('3');
 			secureString.AppendChar('.');
-			if (_serverCertificate == null && ServerCertificateFilename != String.Empty) {
-				//_serverCertificate = X509Certificate2.CreateFromCertFile(ServerCertificateFilename);
-				//X509Certificate2 certificate = new X509Certificate2(ServerCertificateFilename, secureString, X509KeyStorageFlags.UserProtected);
-				//_serverCertificate = X509Certificate2.CreateFromCertFile(ServerCertificateFilename);
-				_serverCertificate = new X509Certificate2(ServerCertificateFilename, secureString);
-			}
- 
+			
 			bool requireClientCertificate = false;
 			SslProtocols enabledSslProtocols = SslProtocols.Ssl2 | SslProtocols.Ssl3 | SslProtocols.Tls;
 			bool checkCertificateRevocation = true;
@@ -236,6 +235,18 @@ namespace TcpRequestHandler {
 				logger.ErrorException(ex.Message, ex);
 			} catch(Exception ex) {
 				logger.ErrorException(ex.Message, ex);
+			}
+		}
+
+		public static void SetServerCertificate(string filename) {
+			if (filename != String.Empty) {
+				if (File.Exists(filename)) {
+					_serverCertificateFilename = filename;
+					//_serverCertificate = X509Certificate2.CreateFromCertFile(ServerCertificateFilename);
+					//X509Certificate2 certificate = new X509Certificate2(ServerCertificateFilename, secureString, X509KeyStorageFlags.UserProtected);
+					//_serverCertificate = X509Certificate2.CreateFromCertFile(ServerCertificateFilename);
+					_serverCertificate = new X509Certificate2(_serverCertificateFilename);
+				}
 			}
 		}
 		
