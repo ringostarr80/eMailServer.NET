@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
@@ -55,7 +56,19 @@ namespace eMailServer {
 			TcpListener secureImapListener = null;
 			
 			if (Options.ServerCertificateFilename != String.Empty) {
-				TcpRequestHandler.TcpRequestHandler.ServerCertificateFilename = Options.ServerCertificateFilename;
+				if (File.Exists(Options.ServerCertificateFilename)) {
+					try {
+						TcpRequestHandler.TcpRequestHandler.SetServerCertificate(Options.ServerCertificateFilename);
+					} catch (Exception ex) {
+						logger.ErrorException("Certificate Exception message: " + ex.Message, ex);
+						LogManager.Configuration = null;
+						return;
+					}
+				} else {
+					logger.Error("Can't find certificate file: " + Options.ServerCertificateFilename);
+					LogManager.Configuration = null;
+					return;
+				}
 			}
 			
 			LimitedConcurrencyLevelTaskScheduler taskScheduler = new LimitedConcurrencyLevelTaskScheduler(500);
