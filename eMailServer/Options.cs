@@ -19,6 +19,9 @@ namespace eMailServer {
 		
 		[Option('e', "server-certificate-filename", DefaultValue = "", Required = false, HelpText = "Sets the filename for the SSL certificate.")]
 		public string ServerCertificateFilename { get; set; }
+
+		[Option('k', "server-key-filename", DefaultValue = "", Required = false, HelpText = "Sets the filename for the SSL key.")]
+		public string ServerKeyFilename { get; set; }
 		
 		[Option('t', "disable-smtp-server", DefaultValue = false, Required = false, HelpText = "Disable the SMTP-Server.")]
 		public bool DisableSmtpServer { get; set; }

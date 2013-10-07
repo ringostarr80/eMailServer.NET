@@ -46,7 +46,7 @@ namespace eMailServer {
 			};
 			
 			this.LineReceived += (object sender, TcpLineReceivedEventArgs e) => {
-				logger.Info(String.Format("[{0}:{1}] Received Line: \"{2}\"", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, e.Line));
+				logger.Info(String.Format("[{0}:{1}] to [{2}:{3}] Received Line: \"{4}\"", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, this._localEndPoint.Address.ToString(), this._localEndPoint.Port, e.Line));
 				
 				switch(this._state) {
 					case ImapState.AuthenticateCramMD5:

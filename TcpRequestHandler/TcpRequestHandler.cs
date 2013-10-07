@@ -4,13 +4,15 @@ using System.IO;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
-using System.Security;
+//using System.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using Mono.Security.Authenticode;
+using Mono.Security.Protocol.Tls;
 using NLog;
 
 namespace TcpRequestHandler {
@@ -48,6 +50,7 @@ namespace TcpRequestHandler {
 	
 	public class TcpRequestHandler : IRequestHandler {
 		private static string _serverCertificateFilename = String.Empty;
+		private static string _serverKeyFilename = String.Empty;
 		protected static X509Certificate _serverCertificate = null;
 		protected int _imapSslPort = 993;
 		protected WaitHandle[] _waitHandles = new WaitHandle[] {
@@ -59,8 +62,9 @@ namespace TcpRequestHandler {
 		protected IPEndPoint _localEndPoint = null;
 		protected int _messageCounter = 0;
 		protected bool _verbose = true;
-		protected SslStream _sslStream = null;
+		protected Mono.Security.Protocol.Tls.SslServerStream _sslStream = null;
 		public static string ServerCertificateFilename { get { return _serverCertificateFilename; } }
+		public static string ServerKeyFilename { get { return _serverKeyFilename; } }
 
 		public bool Verbose { get { return this._verbose; } set { this._verbose = value; } }
 		
@@ -80,9 +84,16 @@ namespace TcpRequestHandler {
 			this._imapSslPort = imapSslPort;
 			this.Init(client);
 		}
-		
+
+		/// <summary>
+		/// Inititalizing the Request.
+		/// </summary>
+		/// <param name='client'>
+		/// the TcpClient.
+		/// </param>
+		/// <see cref="http://docs.go-mono.com/?link=T%3aMono.Security.Protocol.Tls.SslServerStream"/>
 		private void Init(TcpClient client) {
-			bool leaveInnerStreamOpen = false;
+			//bool leaveInnerStreamOpen = false;
 			
 			this._remoteEndPoint = (IPEndPoint)client.Client.RemoteEndPoint;
 			this._localEndPoint = (IPEndPoint)client.Client.LocalEndPoint;
@@ -91,14 +102,22 @@ namespace TcpRequestHandler {
 			
 			if (this._localEndPoint.Port == this._imapSslPort) {
 				try {
-					Console.WriteLine("remote-port: " + this._remoteEndPoint.Port + "; local-port: " + this._localEndPoint.Port);
-					RemoteCertificateValidationCallback validationCallback = new RemoteCertificateValidationCallback(this.ClientValidationCallback);
-					LocalCertificateSelectionCallback selectionCallback = new LocalCertificateSelectionCallback(ServerCertificateSelectionCallback);
+					//RemoteCertificateValidationCallback validationCallback = new RemoteCertificateValidationCallback(this.ClientValidationCallback);
+					//LocalCertificateSelectionCallback selectionCallback = new LocalCertificateSelectionCallback(ServerCertificateSelectionCallback);
 				
-					this._sslStream = new SslStream(this._stream, leaveInnerStreamOpen, validationCallback, selectionCallback);
-					Console.WriteLine("before ServerSideHandshake");
-					this.ServerSideHandshake();
-					Console.WriteLine("after ServerSideHandshake");
+					//this._sslStream = SslStream(this._stream, leaveInnerStreamOpen, validationCallback, selectionCallback);
+					this._sslStream = new SslServerStream(this._stream, _serverCertificate, false, false);
+					this._sslStream.PrivateKeyCertSelectionDelegate += new PrivateKeySelectionCallback((X509Certificate certificate, string targetHost) => {
+						try {
+							PrivateKey key = PrivateKey.CreateFromFile(_serverKeyFilename);
+							return key.RSA;
+						} catch(Exception ex) {
+							Console.WriteLine("Exception: " + ex.Message);
+						}
+
+						return null;
+					}
+					);
 				} catch(Exception ex) {
 					logger.ErrorException(ex.Message, ex);
 				}
@@ -131,7 +150,7 @@ namespace TcpRequestHandler {
 				} else {
 					this._stream.Write(msg, 0, msg.Length);
 				}
-				logger.Info(String.Format("[{0}:{1}] message sent: {2} {3}", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, status, message));
+				logger.Info(String.Format("[{0}:{1}] to [{2}:{3}] message sent: {4} {5}", this._localEndPoint.Address.ToString(), this._localEndPoint.Port, this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, status, message));
 			} catch(Exception) {
 				logger.Error(String.Format("writing message: {0} {1}", status, message));
 			}
@@ -183,78 +202,22 @@ namespace TcpRequestHandler {
 		public virtual void OutputResult() {
 			
 		}
-		
-		protected bool ClientValidationCallback(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors) {
-			Console.WriteLine("ClientValidationCallback(...)");
-			return true;
-		}
-		
-		protected X509Certificate ServerCertificateSelectionCallback(object sender, string targetHost, X509CertificateCollection localCertificates, X509Certificate remoteCertificate, string[] acceptableIssuers) {
-			Console.WriteLine("ServerCertificateSelectionCallback(...)");
-			return new X509Certificate();
-		}
-		
-		/// <summary>
-		/// Perform the server handshake
-		/// </summary>
-		private void ServerSideHandshake() {
-			if (_serverCertificate == null) {
-				return;
-			}
-
-			SecureString secureString = new SecureString();
-			secureString.AppendChar('l');
-			secureString.AppendChar('x');
-			secureString.AppendChar('5');
-			secureString.AppendChar('-');
-			secureString.AppendChar('I');
-			secureString.AppendChar('h');
-			secureString.AppendChar('T');
-			secureString.AppendChar('F');
-			secureString.AppendChar('a');
-			secureString.AppendChar('1');
-			secureString.AppendChar('0');
-			secureString.AppendChar('0');
-			secureString.AppendChar('5');
-			secureString.AppendChar('2');
-			secureString.AppendChar('0');
-			secureString.AppendChar('1');
-			secureString.AppendChar('3');
-			secureString.AppendChar('.');
-			
-			bool requireClientCertificate = false;
-			SslProtocols enabledSslProtocols = SslProtocols.Ssl2 | SslProtocols.Ssl3 | SslProtocols.Tls;
-			bool checkCertificateRevocation = true;
-			
-			try {
-				Console.WriteLine("before SslStream.AuthenticateAsServer");
-				this._sslStream.AuthenticateAsServer(_serverCertificate, requireClientCertificate, enabledSslProtocols, checkCertificateRevocation);
-				Console.WriteLine("after SslStream.AuthenticateAsServer");
-				this.DisplaySecurityLevel(this._sslStream);
-			} catch(AuthenticationException ex) {
-				logger.ErrorException(ex.Message, ex);
-			} catch(Exception ex) {
-				logger.ErrorException(ex.Message, ex);
-			}
-		}
 
 		public static void SetServerCertificate(string filename) {
 			if (filename != String.Empty) {
 				if (File.Exists(filename)) {
 					_serverCertificateFilename = filename;
-					//_serverCertificate = X509Certificate2.CreateFromCertFile(ServerCertificateFilename);
-					//X509Certificate2 certificate = new X509Certificate2(ServerCertificateFilename, secureString, X509KeyStorageFlags.UserProtected);
-					//_serverCertificate = X509Certificate2.CreateFromCertFile(ServerCertificateFilename);
-					_serverCertificate = new X509Certificate2(_serverCertificateFilename);
+					_serverCertificate = X509Certificate.CreateFromCertFile(_serverCertificateFilename);
 				}
 			}
 		}
-		
-		private void DisplaySecurityLevel(SslStream stream) {
-			Console.WriteLine("Cipher: {0} strength {1}", stream.CipherAlgorithm, stream.CipherStrength);
-			Console.WriteLine("Hash: {0} strength {1}", stream.HashAlgorithm, stream.HashStrength);
-			Console.WriteLine("Key exchange: {0} strength {1}", stream.KeyExchangeAlgorithm, stream.KeyExchangeStrength);
-			Console.WriteLine("Protocol: {0}", stream.SslProtocol);
+
+		public static void SetServerKeyFile(string filename) {
+			if (filename != String.Empty) {
+				if (File.Exists(filename)) {
+					_serverKeyFilename = filename;
+				}
+			}
 		}
 	}
 }

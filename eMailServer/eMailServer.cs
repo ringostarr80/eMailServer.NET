@@ -59,13 +59,29 @@ namespace eMailServer {
 				if (File.Exists(Options.ServerCertificateFilename)) {
 					try {
 						TcpRequestHandler.TcpRequestHandler.SetServerCertificate(Options.ServerCertificateFilename);
-					} catch (Exception ex) {
+					} catch(Exception ex) {
 						logger.ErrorException("Certificate Exception message: " + ex.Message, ex);
 						LogManager.Configuration = null;
 						return;
 					}
 				} else {
 					logger.Error("Can't find certificate file: " + Options.ServerCertificateFilename);
+					LogManager.Configuration = null;
+					return;
+				}
+			}
+
+			if (Options.ServerKeyFilename != String.Empty) {
+				if (File.Exists(Options.ServerKeyFilename)) {
+					try {
+						TcpRequestHandler.TcpRequestHandler.SetServerKeyFile(Options.ServerKeyFilename);
+					} catch(Exception ex) {
+						logger.ErrorException("Server Key-File Exception message: " + ex.Message, ex);
+						LogManager.Configuration = null;
+						return;
+					}
+				} else {
+					logger.Error("Can't find server key file file: " + Options.ServerCertificateFilename);
 					LogManager.Configuration = null;
 					return;
 				}
