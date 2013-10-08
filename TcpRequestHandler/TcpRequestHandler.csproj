@@ -43,6 +43,7 @@
     <Compile Include="ImapRequestHandler.cs" />
     <Compile Include="TcpRequestHandler.cs" />
     <Compile Include="FetchFields.cs" />
+    <Compile Include="SmtpRequestHandler.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

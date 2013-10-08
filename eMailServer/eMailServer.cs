@@ -184,7 +184,7 @@ namespace eMailServer {
 								IPEndPoint endPoint = (IPEndPoint)tcpClient.Client.LocalEndPoint;
 								IRequestHandler handler;
 								if (endPoint.Port != Options.ImapPort && endPoint.Port != Options.SecureImapPort) {
-									handler = new SmtpRequestHandler(tcpClient);
+									handler = new SmtpServer(tcpClient, Options.SecureSmtpPort);
 								} else {
 									handler = new ImapServer(tcpClient, Options.SecureImapPort);
 								}

@@ -41,7 +41,6 @@ Global
 		$0.CSharpFormattingPolicy = $3
 		$3.IndentSwitchBody = True
 		$3.AlignEmbeddedUsingStatements = False
-		$3.AlignEmbeddedIfStatements = False
 		$3.NamespaceBraceStyle = EndOfLine
 		$3.ClassBraceStyle = EndOfLine
 		$3.InterfaceBraceStyle = EndOfLine

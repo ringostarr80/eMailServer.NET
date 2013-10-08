@@ -35,21 +35,6 @@ namespace TcpRequestHandler {
 			return new FetchFields(fetch); 
 		}
 
-		public override void OutputResult() {
-			try {
-				this.OnTcpRequestDisconnected(new TcpRequestEventArgs(this._remoteEndPoint, this._localEndPoint));
-				if (this._localEndPoint.Port == this._imapSslPort) {
-					this._sslStream.Close();
-				} else {
-					this._stream.Close();
-				}
-			} catch(Exception e) {
-				logger.Trace(e.Message);
-			} finally {
-				((AutoResetEvent)this._waitHandles[0]).Set();
-			}
-		}
-		
 		protected string CalculateOneTimeBase64Challenge(string hostname) {
 			Process process = Process.GetCurrentProcess();
 			TimeSpan unixTimestampSpan = (DateTime.Now - new DateTime(1970, 1, 1, 0, 0, 0, 0).ToLocalTime());
@@ -149,6 +134,10 @@ namespace TcpRequestHandler {
 			}
 			
 			return words;
+		}
+
+		public override void OutputResult() {
+			base.OutputResult();
 		}
 	}
 }

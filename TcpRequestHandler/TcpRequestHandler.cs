@@ -4,13 +4,13 @@ using System.IO;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
-//using System.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using Mono.Security.Authenticode;
 using Mono.Security.Protocol.Tls;
 using NLog;
@@ -52,13 +52,14 @@ namespace TcpRequestHandler {
 		private static string _serverCertificateFilename = String.Empty;
 		private static string _serverKeyFilename = String.Empty;
 		protected static X509Certificate _serverCertificate = null;
-		protected int _imapSslPort = 993;
+		protected int _sslPort = 993;
 		protected WaitHandle[] _waitHandles = new WaitHandle[] {
 			new AutoResetEvent(false)
 		};
 		protected static Logger logger = LogManager.GetCurrentClassLogger();
 		protected NetworkStream _stream = null;
 		protected SslServerStream _sslStream = null;
+		protected bool _streamClosed = false;
 		private Stream _currentUsedStream = null;
 		protected IPEndPoint _remoteEndPoint = null;
 		protected IPEndPoint _localEndPoint = null;
@@ -82,8 +83,8 @@ namespace TcpRequestHandler {
 			this.Init(client);
 		}
 
-		public TcpRequestHandler(TcpClient client, int imapSslPort) {
-			this._imapSslPort = imapSslPort;
+		public TcpRequestHandler(TcpClient client, int sslPort) {
+			this._sslPort = sslPort;
 			this.Init(client);
 		}
 
@@ -101,7 +102,7 @@ namespace TcpRequestHandler {
 			this._stream = client.GetStream();
 			this._currentUsedStream = this._stream;
 			
-			if (this._localEndPoint.Port == this._imapSslPort) {
+			if (this._localEndPoint.Port == this._sslPort) {
 				this.StartTls();
 			}
 		}
@@ -140,32 +141,38 @@ namespace TcpRequestHandler {
 		
 		public void Start() {
 			this.OnTcpRequestConnected(new TcpRequestEventArgs(this._remoteEndPoint, this._localEndPoint));
-			
-			Byte[] bytes = new Byte[1024];
-			int i = 0;
-			bool lineSent = true;
-			
-			List<byte> listBytes = new List<byte>();
-			try {
-				while((i = this._currentUsedStream.Read(bytes, 0, bytes.Length)) != 0) {
-					for(int byteIndex = 0; byteIndex < i; byteIndex++) {
-						if (bytes[byteIndex] != '\n') {
-							listBytes.Add(bytes[byteIndex]);
-							lineSent = false;
-						} else {
-							this.OnTcpLineReceived(new TcpLineReceivedEventArgs(listBytes.ToArray()));
-							lineSent = true;
-							listBytes = new List<byte>();
+
+			TaskFactory factory = new TaskFactory();
+			factory.StartNew(() => {
+				Byte[] bytes = new Byte[1024];
+				bool lineSent = true;
+				int bytesRead = 0;
+
+				List<byte> listBytes = new List<byte>();
+				try {
+					while((bytesRead = this._currentUsedStream.Read(bytes, 0, bytes.Length)) != 0) {
+						for(int byteIndex = 0; byteIndex < bytesRead; byteIndex++) {
+							if (bytes[byteIndex] != '\n') {
+								listBytes.Add(bytes[byteIndex]);
+								lineSent = false;
+							} else {
+								this.OnTcpLineReceived(new TcpLineReceivedEventArgs(listBytes.ToArray()));
+								lineSent = true;
+								listBytes = new List<byte>();
+							}
 						}
 					}
-				}
 				
-				if (!lineSent) {
-					this.OnTcpLineReceived(new TcpLineReceivedEventArgs(listBytes.ToArray()));
+					if (!lineSent) {
+						this.OnTcpLineReceived(new TcpLineReceivedEventArgs(listBytes.ToArray()));
+					}
+				} catch(Exception ex) {
+					if (!this._streamClosed) {
+						logger.ErrorException(ex.Message, ex);
+					}
 				}
-			} catch(Exception ex) {
-				logger.ErrorException(ex.Message, ex);
 			}
+			);
 		}
 		
 		public void Close() {
@@ -177,10 +184,22 @@ namespace TcpRequestHandler {
 		}
 
 		public virtual void OutputResult() {
-			
+			try {
+				this._streamClosed = true;
+				this._currentUsedStream.Close();
+			} catch(Exception e) {
+				logger.Trace(e.Message);
+			} finally {
+				this.OnTcpRequestDisconnected(new TcpRequestEventArgs(this._remoteEndPoint, this._localEndPoint));
+				((AutoResetEvent)this._waitHandles[0]).Set();
+			}
 		}
 
 		protected bool StartTls() {
+			if (this.SslIsActive) {
+				return true;
+			}
+
 			try {
 				this._sslStream = new SslServerStream(this._stream, _serverCertificate, false, false);
 				this._sslStream.PrivateKeyCertSelectionDelegate += new PrivateKeySelectionCallback((X509Certificate certificate, string targetHost) => {
