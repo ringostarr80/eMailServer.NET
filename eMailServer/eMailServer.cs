@@ -81,7 +81,7 @@ namespace eMailServer {
 						return;
 					}
 				} else {
-					logger.Error("Can't find server key file file: " + Options.ServerCertificateFilename);
+					logger.Error("Can't find server key file file: " + Options.ServerKeyFilename);
 					LogManager.Configuration = null;
 					return;
 				}

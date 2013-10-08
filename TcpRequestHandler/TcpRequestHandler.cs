@@ -58,15 +58,17 @@ namespace TcpRequestHandler {
 		};
 		protected static Logger logger = LogManager.GetCurrentClassLogger();
 		protected NetworkStream _stream = null;
+		protected SslServerStream _sslStream = null;
+		private Stream _currentUsedStream = null;
 		protected IPEndPoint _remoteEndPoint = null;
 		protected IPEndPoint _localEndPoint = null;
 		protected int _messageCounter = 0;
 		protected bool _verbose = true;
-		protected Mono.Security.Protocol.Tls.SslServerStream _sslStream = null;
 		public static string ServerCertificateFilename { get { return _serverCertificateFilename; } }
 		public static string ServerKeyFilename { get { return _serverKeyFilename; } }
 
 		public bool Verbose { get { return this._verbose; } set { this._verbose = value; } }
+		public bool SslIsActive { get { return (this._sslStream != null) ? true : false; } }
 		
 		public event TcpRequestEventHandler Connected;
 		public event TcpRequestEventHandler Disconnected;
@@ -93,34 +95,14 @@ namespace TcpRequestHandler {
 		/// </param>
 		/// <see cref="http://docs.go-mono.com/?link=T%3aMono.Security.Protocol.Tls.SslServerStream"/>
 		private void Init(TcpClient client) {
-			//bool leaveInnerStreamOpen = false;
-			
 			this._remoteEndPoint = (IPEndPoint)client.Client.RemoteEndPoint;
 			this._localEndPoint = (IPEndPoint)client.Client.LocalEndPoint;
 			
 			this._stream = client.GetStream();
+			this._currentUsedStream = this._stream;
 			
 			if (this._localEndPoint.Port == this._imapSslPort) {
-				try {
-					//RemoteCertificateValidationCallback validationCallback = new RemoteCertificateValidationCallback(this.ClientValidationCallback);
-					//LocalCertificateSelectionCallback selectionCallback = new LocalCertificateSelectionCallback(ServerCertificateSelectionCallback);
-				
-					//this._sslStream = SslStream(this._stream, leaveInnerStreamOpen, validationCallback, selectionCallback);
-					this._sslStream = new SslServerStream(this._stream, _serverCertificate, false, false);
-					this._sslStream.PrivateKeyCertSelectionDelegate += new PrivateKeySelectionCallback((X509Certificate certificate, string targetHost) => {
-						try {
-							PrivateKey key = PrivateKey.CreateFromFile(_serverKeyFilename);
-							return key.RSA;
-						} catch(Exception ex) {
-							Console.WriteLine("Exception: " + ex.Message);
-						}
-
-						return null;
-					}
-					);
-				} catch(Exception ex) {
-					logger.ErrorException(ex.Message, ex);
-				}
+				this.StartTls();
 			}
 		}
 		
@@ -145,11 +127,7 @@ namespace TcpRequestHandler {
 		protected void SendMessage(string message, string status) {
 			byte[] msg = Encoding.UTF8.GetBytes(String.Format("{0} {1}\r\n", status, message));
 			try {
-				if (this._localEndPoint.Port == this._imapSslPort) {
-					this._sslStream.Write(msg, 0, msg.Length);
-				} else {
-					this._stream.Write(msg, 0, msg.Length);
-				}
+				this._currentUsedStream.Write(msg, 0, msg.Length);
 				logger.Info(String.Format("[{0}:{1}] to [{2}:{3}] message sent: {4} {5}", this._localEndPoint.Address.ToString(), this._localEndPoint.Port, this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, status, message));
 			} catch(Exception) {
 				logger.Error(String.Format("writing message: {0} {1}", status, message));
@@ -169,8 +147,7 @@ namespace TcpRequestHandler {
 			
 			List<byte> listBytes = new List<byte>();
 			try {
-				Stream currentStream = (this._localEndPoint.Port == this._imapSslPort) ? (Stream)this._sslStream : (Stream)this._stream;
-				while((i = currentStream.Read(bytes, 0, bytes.Length)) != 0) {
+				while((i = this._currentUsedStream.Read(bytes, 0, bytes.Length)) != 0) {
 					for(int byteIndex = 0; byteIndex < i; byteIndex++) {
 						if (bytes[byteIndex] != '\n') {
 							listBytes.Add(bytes[byteIndex]);
@@ -203,11 +180,37 @@ namespace TcpRequestHandler {
 			
 		}
 
+		protected bool StartTls() {
+			try {
+				this._sslStream = new SslServerStream(this._stream, _serverCertificate, false, false);
+				this._sslStream.PrivateKeyCertSelectionDelegate += new PrivateKeySelectionCallback((X509Certificate certificate, string targetHost) => {
+					try {
+						PrivateKey key = PrivateKey.CreateFromFile(_serverKeyFilename);
+						return key.RSA;
+					} catch(Exception ex) {
+						Console.WriteLine("Exception: " + ex.Message);
+					}
+
+					return null;
+				}
+				);
+				this._currentUsedStream = this._sslStream;
+				return true;
+			} catch(Exception ex) {
+				logger.ErrorException(ex.Message, ex);
+				return false;
+			}
+		}
+
 		public static void SetServerCertificate(string filename) {
 			if (filename != String.Empty) {
 				if (File.Exists(filename)) {
 					_serverCertificateFilename = filename;
-					_serverCertificate = X509Certificate.CreateFromCertFile(_serverCertificateFilename);
+					try {
+						_serverCertificate = X509Certificate.CreateFromCertFile(_serverCertificateFilename);
+					} catch(Exception ex) {
+						logger.ErrorException(ex.Message, ex);
+					}
 				}
 			}
 		}

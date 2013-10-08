@@ -86,7 +86,17 @@ namespace eMailServer {
 						break;
 						
 					case ImapState.AuthenticatePlain:
-						List<string> words = this.GetWordsFromBase64EncodedLine(e.Line);
+						List<string> words = new List<string>();
+						try {
+							words = this.GetWordsFromBase64EncodedLine(e.Line);
+						} catch(Exception) {
+							// maybe it is not base64-encoded
+							Match plainTextMatch = Regex.Match(e.Line, "\\s+LOGIN\\s+\"([^\"]+)\"\\s+\"([^\"]+)\"", RegexOptions.IgnoreCase);
+							if (plainTextMatch.Success) {
+								words.Add(plainTextMatch.Groups[1].Value);
+								words.Add(plainTextMatch.Groups[2].Value);
+							}
+						}
 						
 						this._state = ImapState.Default;
 						if (words.Count == 2) {
@@ -115,7 +125,13 @@ namespace eMailServer {
 									break;
 		
 								case "CAPABILITY":
-									this.SendMessage("CAPABILITY IMAP4rev1 STARTTLS LOGINDISABLED AUTH=PLAIN AUTH=CRAM-MD5", "*");
+									string capabilities = "CAPABILITY IMAP4rev1 LOGIN";
+									if (!this.SslIsActive) {
+										capabilities += " STARTTLS";
+									}
+									capabilities += " AUTH=PLAIN";
+									capabilities += " AUTH=CRAM-MD5";
+									this.SendMessage(capabilities, "*");
 									this.SendMessage("OK CAPABILITY completed", this._lastClientId);
 									break;
 								
@@ -140,9 +156,12 @@ namespace eMailServer {
 									break;
 								
 								case "STARTTLS":
-									//this.SendMessage("OK STARTTLS completed", this._lastClientId);
 									this.SendMessage("OK Begin TLS negotiation now", this._lastClientId);
-									//this.SendMessage("NO STARTTLS not supported", this._lastClientId);
+									if (this.StartTls()) {
+										this.SendMessage("OK STARTTLS completed", this._lastClientId);
+									} else {
+										this.SendMessage("NO STARTTLS not supported", this._lastClientId);
+									}
 									break;
 								
 								case "UID":
