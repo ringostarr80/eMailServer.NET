@@ -184,6 +184,13 @@ namespace eMailServer {
 
 								mail.ParseData(mailMessage);
 								if (mail.IsValid) {
+									if (this._user.IsLoggedIn && User.EMailExists(mail.MailFrom)) {
+										mail.SetUser(this._user);
+										mail.SetFolder("SENT");
+									} else {
+										mail.SetFolder("INBOX");
+									}
+
 									mail.SaveToMongoDB();
 								} else {
 									logger.Error("received message is invalid for saving to database.");

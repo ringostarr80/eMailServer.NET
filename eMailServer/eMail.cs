@@ -12,6 +12,8 @@ using NLog;
 namespace eMailServer {
 	public class eMail {
 		private static Logger logger = LogManager.GetCurrentClassLogger();
+
+		private User _user = new User();
 		private string _id = "";
 		private string _clientName = String.Empty;
 		private DateTime _time = DateTime.Now;
@@ -19,11 +21,13 @@ namespace eMailServer {
 		private string _recipientTo = String.Empty;
 		private string _subject = String.Empty;
 		private string _message = String.Empty;
+		private string _folder = String.Empty;
 		private eMailAddress _headerFrom = new eMailAddress();
 		private eMailAddress _headerReplyTo = null;
 		private List<eMailAddress> _headerTo = new List<eMailAddress>();
 		private List<eMailAddress> _headerCc = new List<eMailAddress>();
 		private DateTime _headerDate;
+		private List<string> _flags = new List<string>();
 		private List<KeyValuePair<string, string>> _rawHeader = new List<KeyValuePair<string, string>>();
 		private MongoServer _mongoServer = null;
 
@@ -41,6 +45,8 @@ namespace eMailServer {
 
 		public string Message { get { return this._message; } }
 
+		public string Folder { get { return this._folder; } }
+
 		public eMailAddress HeaderFrom { get { return this._headerFrom; } }
 
 		public eMailAddress HeaderReplyTo { get { return this._headerReplyTo; } }
@@ -50,6 +56,8 @@ namespace eMailServer {
 		public List<eMailAddress> HeaderCc { get { return this._headerCc; } }
 
 		public DateTime HeaderDate { get { return this._headerDate; } }
+
+		public List<string> Flags { get { return this._flags; } }
 
 		public List<KeyValuePair<string, string>> RawHeader { get { return this._rawHeader; } }
 
@@ -79,6 +87,8 @@ namespace eMailServer {
 			this.SetReplyTo(entity.HeaderReplyTo);
 			this.SetSubject(entity.Subject);
 			this.SetTime(entity.Time);
+			this.SetFolder(entity.Folder);
+			this._flags = entity.Flags;
 		}
 
 		public void Send() {
@@ -220,6 +230,10 @@ namespace eMailServer {
 			this._id = id;
 		}
 
+		public void SetUser(User user) {
+			this._user = user;
+		}
+
 		public void SetMessage(string message) {
 			this._message = message;
 		}
@@ -242,6 +256,10 @@ namespace eMailServer {
 
 		public void SetTime(DateTime time) {
 			this._time = time;
+		}
+
+		public void SetFolder(string folder) {
+			this._folder = folder;
 		}
 
 		private string ParseMailAddress(string mailAddress) {
@@ -292,7 +310,9 @@ namespace eMailServer {
 			logger.Info("Saving received eMail to Database.");
 
 			string userDatabase = "email";
-			if (User.EMailExists(this.RecipientTo)) {
+			if (this._user.IsLoggedIn) {
+				userDatabase = "email_user_" + this._user.Id;
+			} else if (User.EMailExists(this.RecipientTo)) {
 				string userId = User.GetIdByEMail(this.RecipientTo);
 				if (userId != String.Empty) {
 					userDatabase = "email_user_" + userId;
@@ -312,6 +332,7 @@ namespace eMailServer {
 				HeaderFrom = this.HeaderFrom,
 				HeaderTo = this.HeaderTo,
 				HeaderDate = this.HeaderDate,
+				Folder = this.Folder,
 				RawHeader = this.RawHeader
 			};
 
@@ -333,6 +354,7 @@ namespace eMailServer {
 		
 		public void AssignToUser(User user) {
 			if (this.SaveToMongoDB()) {
+				this._user = user;
 				MongoDatabase mongoDatabase = this._mongoServer.GetDatabase("email");
 				MongoCollection mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
 				IMongoQuery query = Query<eMailEntity>.Where(e => e.Id == new ObjectId(this.Id));
