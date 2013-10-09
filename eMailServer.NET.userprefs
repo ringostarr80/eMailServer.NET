@@ -2,12 +2,12 @@
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
   <MonoDevelop.Ide.Workbench ActiveDocument="eMailServer/SmtpServer.cs">
     <Files>
-      <File FileName="eMailServer/eMailServer.cs" Line="75" Column="38" />
-      <File FileName="eMailServer/ImapServer.cs" Line="51" Column="5" />
-      <File FileName="eMailServer/SmtpServer.cs" Line="63" Column="9" />
-      <File FileName="TcpRequestHandler/ImapRequestHandler.cs" Line="77" Column="21" />
-      <File FileName="TcpRequestHandler/SmtpRequestHandler.cs" Line="110" Column="13" />
-      <File FileName="TcpRequestHandler/TcpRequestHandler.cs" Line="13" Column="13" />
+      <File FileName="eMailServer/eMailServer.cs" Line="194" Column="9" />
+      <File FileName="eMailServer/ImapServer.cs" Line="129" Column="34" />
+      <File FileName="eMailServer/SmtpServer.cs" Line="46" Column="6" />
+      <File FileName="TcpRequestHandler/ImapRequestHandler.cs" Line="139" Column="40" />
+      <File FileName="TcpRequestHandler/SmtpRequestHandler.cs" Line="26" Column="3" />
+      <File FileName="TcpRequestHandler/TcpRequestHandler.cs" Line="199" Column="27" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">

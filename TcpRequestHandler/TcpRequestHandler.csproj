@@ -49,4 +49,15 @@
   <ItemGroup>
     <None Include="NLog.dll" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="certificates\" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="certificates\localhost.cer">
+      <LogicalName>localhost.cer</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="certificates\localhost.pvk">
+      <LogicalName>localhost.pvk</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
 </Project>

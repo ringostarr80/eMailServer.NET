@@ -12,9 +12,7 @@ namespace eMailServer {
 	public class ImapServer : ImapRequestHandler {
 		protected new static Logger logger = LogManager.GetCurrentClassLogger();
 		private User _user = new User();
-		private ImapState _state = ImapState.Default;
 		private string _lastClientId = String.Empty;
-		private string _currentCramMD5Challenge = String.Empty;
 		
 		public ImapServer() : base() {
 			
@@ -49,10 +47,10 @@ namespace eMailServer {
 				logger.Info(String.Format("[{0}:{1}] to [{2}:{3}] Received Line: \"{4}\"", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, this._localEndPoint.Address.ToString(), this._localEndPoint.Port, e.Line));
 				
 				switch(this._state) {
-					case ImapState.AuthenticateCramMD5:
+					case State.AuthenticateCramMD5:
 						List<string> wordsCramMD5 = this.GetWordsFromBase64EncodedLine(e.Line);
 						
-						this._state = ImapState.Default;
+						this._state = State.Default;
 						if (wordsCramMD5.Count == 1) {
 							string[] splittedWords = wordsCramMD5[0].Split(new char[] {' '});
 							if (splittedWords.Length == 2) {
@@ -85,7 +83,7 @@ namespace eMailServer {
 						this._currentCramMD5Challenge = String.Empty;
 						break;
 						
-					case ImapState.AuthenticatePlain:
+					case State.AuthenticatePlain:
 						List<string> words = new List<string>();
 						try {
 							words = this.GetWordsFromBase64EncodedLine(e.Line);
@@ -98,7 +96,7 @@ namespace eMailServer {
 							}
 						}
 						
-						this._state = ImapState.Default;
+						this._state = State.Default;
 						if (words.Count == 2) {
 							if (words[0] != String.Empty && words[1] != String.Empty) {
 								if (this._user.RefreshByUsernamePassword(words[0], words[1]) || this._user.RefreshByEMailPassword(words[0], words[1])) {
@@ -114,7 +112,7 @@ namespace eMailServer {
 						}
 						break;
 					
-					case ImapState.Default:
+					case State.Default:
 						Match clientCommandMatch = Regex.Match(e.Line, @"^([^\s]+)\s+(\w+)(\s.+)?", RegexOptions.IgnoreCase);
 						if (clientCommandMatch.Success) {
 							this._lastClientId = clientCommandMatch.Groups[1].Value;
@@ -183,12 +181,12 @@ namespace eMailServer {
 		private void Authenticate(string authenticateMethod) {
 			switch(authenticateMethod) {
 				case "PLAIN":
-					this._state = ImapState.AuthenticatePlain;
+					this._state = State.AuthenticatePlain;
 					this.SendMessage("", "+");
 					break;
 				
 				case "CRAM-MD5":
-					this._state = ImapState.AuthenticateCramMD5;
+					this._state = State.AuthenticateCramMD5;
 					string base64EncodedCramMD5Challenge = this.CalculateOneTimeBase64Challenge("localhost.de");
 					this._currentCramMD5Challenge = Encoding.UTF8.GetString(Convert.FromBase64String(base64EncodedCramMD5Challenge));
 					this.SendMessage(base64EncodedCramMD5Challenge, "+");

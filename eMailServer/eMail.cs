@@ -135,11 +135,11 @@ namespace eMailServer {
 							lastHeader = new KeyValuePair<string, string>(lastHeader.Key, lastHeader.Value + "\r\n" + currentHeader.Value);
 						}
 					} else if (currentHeader.Key != String.Empty) {
-							if (lastHeader.Key != String.Empty) {
-								this._rawHeader.Add(lastHeader);
-							}
-							lastHeader = currentHeader;
+						if (lastHeader.Key != String.Empty) {
+							this._rawHeader.Add(lastHeader);
 						}
+						lastHeader = currentHeader;
+					}
 				} else {
 					if (trimmedLine == "..") {
 						trimmedLine = ".";
@@ -269,14 +269,16 @@ namespace eMailServer {
 				return null;
 			}
 
-			Match eMailFieldMatch = Regex.Match(mailAddress, "(\"([^\"]*)\")?\\s*<([^>]+)>", RegexOptions.Compiled);
+			Match eMailFieldMatch = Regex.Match(mailAddress, "(\"?([^\"]*)\"?)?\\s*<([^>]+)>", RegexOptions.Compiled);
 			if (eMailFieldMatch.Success) {
 				try {
-					return new eMailAddress(eMailFieldMatch.Groups[2].Value, eMailFieldMatch.Groups[3].Value);
+					return new eMailAddress(eMailFieldMatch.Groups[2].Value.Trim(), eMailFieldMatch.Groups[3].Value.Trim());
 				} catch(FormatException) {
 					logger.Error("invalid eMail address format: " + eMailFieldMatch.Groups[3].Value);
 					return null;
 				}
+			} else if (eMailAddress.IsValid(mailAddress)) {
+				return new eMailAddress(String.Empty, mailAddress);
 			}
 
 			return null;
