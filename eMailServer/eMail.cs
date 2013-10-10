@@ -95,30 +95,6 @@ namespace eMailServer {
 
 		}
 
-		public void SetClientName(string clientName) {
-			if (clientName.Trim() != String.Empty) {
-				this._clientName = clientName.Trim();
-			}
-		}
-
-		public void SetFrom(string mailFrom) {
-			string parsedMailAddress = this.ParseMailAddress(mailFrom);
-			if (parsedMailAddress != null) {
-				this._mailFrom = parsedMailAddress;
-			}
-		}
-
-		public void SetRecipient(string mailRecipient) {
-			string parsedMailAddress = this.ParseMailAddress(mailRecipient);
-			if (parsedMailAddress != null) {
-				this._recipientTo = parsedMailAddress;
-			}
-		}
-
-		public void SetSubject(string subject) {
-			this._subject = subject;
-		}
-
 		public void ParseData(string data) {
 			bool header = true;
 
@@ -230,6 +206,32 @@ namespace eMailServer {
 			this._id = id;
 		}
 
+		public void SetClientName(string clientName) {
+			if (clientName.Trim() != String.Empty) {
+				this._clientName = clientName.Trim();
+			}
+		}
+
+		public void SetFrom(string mailFrom) {
+			string parsedMailAddress = this.ParseMailAddress(mailFrom);
+			if (parsedMailAddress != null) {
+				this._mailFrom = parsedMailAddress;
+			} else {
+				throw new FormatException("invalid eMail-address: \"" + mailFrom + "\"");
+			}
+		}
+
+		public void SetRecipient(string mailRecipient) {
+			string parsedMailAddress = this.ParseMailAddress(mailRecipient);
+			if (parsedMailAddress != null) {
+				this._recipientTo = parsedMailAddress;
+			}
+		}
+
+		public void SetSubject(string subject) {
+			this._subject = subject;
+		}
+
 		public void SetUser(User user) {
 			this._user = user;
 		}
@@ -273,8 +275,7 @@ namespace eMailServer {
 				mailAddress = mailAddress.Trim(new char[] {'<', '>'}).Trim();
 			}
 
-			RegexUtilities regexUtility = new RegexUtilities();
-			if (regexUtility.IsValidEmail(mailAddress)) {
+			if (eMailAddress.IsValid(mailAddress)) {
 				return mailAddress;
 			}
 

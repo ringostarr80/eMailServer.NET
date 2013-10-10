@@ -263,12 +263,16 @@ namespace eMailServer {
 			
 			MongoCursor<eMailEntity> mongoCursor = mongoCollection.FindAll();
 			foreach(eMailEntity entity in mongoCursor) {
-				if (User.EMailExists(entity.RecipientTo)) {
-					Console.WriteLine("user with email-address found: " + entity.RecipientTo);
-					User newMailUser = new User();
-					newMailUser.RefreshById(User.GetIdByEMail(entity.RecipientTo));
-					eMail mail = new eMail(entity);
-					mail.AssignToUser(newMailUser);
+				try {
+					if (User.EMailExists(entity.RecipientTo)) {
+						Console.WriteLine("user with email-address found: " + entity.RecipientTo);
+						User newMailUser = new User();
+						newMailUser.RefreshById(User.GetIdByEMail(entity.RecipientTo));
+						eMail mail = new eMail(entity);
+						mail.AssignToUser(newMailUser);
+					}
+				} catch(Exception ex) {
+					logger.ErrorException(ex.Message, ex);
 				}
 			}
 			

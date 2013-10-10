@@ -147,8 +147,13 @@ namespace eMailServer {
 									}
 								}
 							} else if (e.Line.StartsWith("MAIL FROM:")) {
-								mail.SetFrom(e.Line.Substring(10));
-								this.SendMessage("OK", 250);
+								string email = e.Line.Substring(10);
+								try {
+									mail.SetFrom(email);
+									this.SendMessage("OK", 250);
+								} catch(FormatException) {
+									this.SendMessage("BAD <" + email + ">... Denied due to invalid email-format", 555);
+								}
 							} else if (e.Line.StartsWith("RCPT TO:")) {
 								mail.SetRecipient(e.Line.Substring(8));
 								this.SendMessage("OK", 250);
