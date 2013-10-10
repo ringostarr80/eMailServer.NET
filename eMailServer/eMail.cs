@@ -91,6 +91,58 @@ namespace eMailServer {
 			this._flags = entity.Flags;
 		}
 
+		public eMail(LazyBsonDocument bsonDocument) {
+			this._mongoServer = MyMongoDB.GetServer();
+
+			this.SetId(bsonDocument["_id"].AsObjectId.ToString());
+			if (bsonDocument["ClientName"] != null) {
+				this.SetClientName(bsonDocument["ClientName"].AsString);
+			}
+			if (bsonDocument["MailFrom"] != null) {
+				this.SetFrom(bsonDocument["MailFrom"].AsString);
+			}
+			if (bsonDocument["HeaderFrom"] != null && bsonDocument["HeaderFrom"].IsBsonDocument) {
+				BsonDocument bsonHeaderFrom = bsonDocument["HeaderFrom"].AsBsonDocument;
+				if (bsonHeaderFrom["Name"] != null && bsonHeaderFrom["Address"] != null) {
+					this.SetHeaderFrom(new eMailAddress(bsonHeaderFrom["Name"].AsString, bsonHeaderFrom["Address"].AsString));
+				}
+			}
+			if (bsonDocument["HeaderTo"] != null && bsonDocument["HeaderTo"].IsBsonArray) {
+				BsonArray bsonHeaderTo = bsonDocument["HeaderTo"].AsBsonArray;
+				List<eMailAddress> headerTo = new List<eMailAddress>();
+				foreach(var currentBsonHeaderTo in bsonHeaderTo) {
+					if (currentBsonHeaderTo.IsBsonDocument && currentBsonHeaderTo["Name"] != null && currentBsonHeaderTo["Address"] != null) {
+						headerTo.Add(new eMailAddress(currentBsonHeaderTo["Name"].AsString, currentBsonHeaderTo["Address"].AsString));
+					}
+				}
+				this.SetHeaderTo(headerTo);
+			}
+			if (bsonDocument["Message"] != null) {
+				this.SetMessage(bsonDocument["Message"].AsString);
+			}
+			if (bsonDocument["RecipientTo"] != null) {
+				this.SetRecipient(bsonDocument["RecipientTo"].AsString);
+			}
+			if (bsonDocument["HeaderReplyTo"] != null) {
+				BsonDocument bsonHeaderReplyTo = bsonDocument["HeaderReplyTo"].AsBsonDocument;
+				if (bsonHeaderReplyTo["Name"] != null && bsonHeaderReplyTo["Address"] != null) {
+					this.SetReplyTo(bsonHeaderReplyTo["Name"].AsString, bsonHeaderReplyTo["Address"].AsString);
+				}
+			}
+			if (bsonDocument["Subject"] != null) {
+				this.SetSubject(bsonDocument["Subject"].AsString);
+			}
+			if (bsonDocument["Folder"] != null) {
+				this.SetFolder(bsonDocument["Folder"].AsString);
+			}
+			if (bsonDocument["Time"] != null) {
+				this.SetTime((DateTime)bsonDocument["Time"].AsBsonDateTime);
+			}
+			if (bsonDocument["Flags"] != null) {
+				//this._flags = bsonDocument["Flags"].AsBsonArray;
+			}
+		}
+
 		public void Send() {
 
 		}

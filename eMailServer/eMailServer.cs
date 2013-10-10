@@ -259,19 +259,20 @@ namespace eMailServer {
 			MongoServer mongoServer = MyMongoDB.GetServer();
 			
 			MongoDatabase mongoDatabase = mongoServer.GetDatabase("email");
-			MongoCollection<eMailEntity> mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
+			//MongoCollection<eMailEntity> mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
+			MongoCollection<LazyBsonDocument> mongoCollection = mongoDatabase.GetCollection<LazyBsonDocument>("mails");
 			
-			MongoCursor<eMailEntity> mongoCursor = mongoCollection.FindAll();
-			foreach(eMailEntity entity in mongoCursor) {
+			MongoCursor<LazyBsonDocument> mongoCursor = mongoCollection.FindAll();
+			foreach(LazyBsonDocument bsonDocument in mongoCursor) {
 				if (Options.Verbose) {
-					Console.WriteLine("checking email-id: " + entity.Id.ToString());
+					Console.WriteLine("checking email-id: " + bsonDocument["_id"].ToString());
 				}
 				try {
-					if (User.EMailExists(entity.RecipientTo)) {
-						Console.WriteLine("user with email-address found: " + entity.RecipientTo);
+					if (User.EMailExists(bsonDocument["RecipientTo"].AsString)) {
+						Console.WriteLine("user with email-address found: " + bsonDocument["RecipientTo"].AsString);
 						User newMailUser = new User();
-						newMailUser.RefreshById(User.GetIdByEMail(entity.RecipientTo));
-						eMail mail = new eMail(entity);
+						newMailUser.RefreshById(User.GetIdByEMail(bsonDocument["RecipientTo"].AsString));
+						eMail mail = new eMail(bsonDocument);
 						mail.AssignToUser(newMailUser);
 					}
 				} catch(Exception ex) {
