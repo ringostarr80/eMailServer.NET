@@ -263,6 +263,9 @@ namespace eMailServer {
 			
 			MongoCursor<eMailEntity> mongoCursor = mongoCollection.FindAll();
 			foreach(eMailEntity entity in mongoCursor) {
+				if (Options.Verbose) {
+					Console.WriteLine("checking email-id: " + entity.Id.ToString());
+				}
 				try {
 					if (User.EMailExists(entity.RecipientTo)) {
 						Console.WriteLine("user with email-address found: " + entity.RecipientTo);
