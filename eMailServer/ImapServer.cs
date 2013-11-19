@@ -152,6 +152,21 @@ namespace eMailServer {
 								case "SELECT":
 									this.Select(clientCommandMatch.Groups[3].Value.ToUpper());
 									break;
+
+								case "LSUB":
+									Match lsubMatch = Regex.Match(clientCommandMatch.Groups[3].Value, "\"([^\"]*)\"\\s+\"([^\"]*)\"", RegexOptions.Compiled);
+									if (lsubMatch.Success) {
+										List<string> folders = this._user.GetFolders(lsubMatch.Groups[1].Value, lsubMatch.Groups[2].Value);
+										foreach(string folder in folders) {
+											this.SendMessage("LSUB () \"/\" \"" + folder + "\"", "*");
+										}
+									}
+									this.SendMessage("OK LSUB completed", this._lastClientId);
+									break;
+								
+								case "LIST":
+									this.List(clientCommandMatch.Groups[3].Value.ToUpper());
+									break;
 								
 								case "STARTTLS":
 									this.SendMessage("OK Begin TLS negotiation now", this._lastClientId);
@@ -215,6 +230,10 @@ namespace eMailServer {
 		private void Select(string folder) {
 			if (this._user.IsLoggedIn) {
 				switch(folder) {
+					case "TRASH":
+						folder = "TRASH";
+						break;
+
 					case "INBOX":
 					default:
 						folder = "INBOX";
@@ -227,6 +246,13 @@ namespace eMailServer {
 				this.SendMessage("OK [READ] SELECT completed", this._lastClientId);
 			} else {
 				this.SendMessage("BAD login required", this._lastClientId);
+			}
+		}
+
+		private void List(string listString) {
+			Match listMatch = Regex.Match(listString, "\"([^\"]*)\"\\s+\"([^\"]*)\"", RegexOptions.Compiled);
+			if (listMatch.Success) {
+				this.SendMessage("LIST () \"/\" \"" + listMatch.Groups[2].Value.ToUpper() + "\"", "*");
 			}
 		}
 		

@@ -64,6 +64,7 @@
     <Compile Include="eMailServer.cs" />
     <Compile Include="ImapServer.cs" />
     <Compile Include="SmtpServer.cs" />
+    <Compile Include="Entities\eMailFolderEntity.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
