@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Net;
 using System.Net.Mail;
 using System.Net.NetworkInformation;
@@ -167,6 +168,18 @@ namespace eMailServer {
 					IPAddressCollection dnsAddresses = ipProperties.DnsAddresses;
 					foreach(IPAddress dnsAddress in dnsAddresses) {
 						return dnsAddress;
+					}
+				}
+			}
+
+			// alternative
+			string linuxResolveFilename = "/etc/resolv.conf";
+			if (File.Exists(linuxResolveFilename)) {
+				string[] lines = File.ReadAllLines(linuxResolveFilename);
+				foreach(string line in lines) {
+					Match nameserverMatch = Regex.Match(line, "nameserver\\s+([0-9]+)\\.([0-9]+)\\.([0-9]+)\\.([0-9]+)", RegexOptions.Compiled);
+					if (nameserverMatch.Success) {
+						return IPAddress.Parse(nameserverMatch.Groups[1].Value + "." + nameserverMatch.Groups[2].Value + "." + nameserverMatch.Groups[3].Value + "." + nameserverMatch.Groups[4].Value);
 					}
 				}
 			}
