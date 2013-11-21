@@ -12,6 +12,7 @@ namespace eMailServer {
 	public class SmtpServer : SmtpRequestHandler {
 		protected new static Logger logger = LogManager.GetCurrentClassLogger();
 		private User _user = new User();
+		private Dictionary<string, string> _temporaryVariables = new Dictionary<string, string>();
 
 		public SmtpServer() : base() {
 
@@ -51,6 +52,42 @@ namespace eMailServer {
 				logger.Info(String.Format("[{0}:{1}] to [{2}:{3}] Received Line: \"{4}\"", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, this._localEndPoint.Address.ToString(), this._localEndPoint.Port, e.Line));
 
 				switch(this._state) {
+					case State.AuthenticateLoginUsername:
+						this._temporaryVariables["username"] = Encoding.UTF8.GetString(Convert.FromBase64String(e.Line)).Trim();
+						if (this._temporaryVariables["username"] != String.Empty) {
+							this._state = State.AuthenticateLoginPassword;
+
+							if (User.NameExists(this._temporaryVariables["username"]) || User.EMailExists(this._temporaryVariables["username"])) {
+								this.SendMessage(Convert.ToBase64String(Encoding.UTF8.GetBytes("Password:")), 334);
+							} else {
+								this.SendMessage("5.7.8 Authentication credentials invalid", 535);
+							}
+						} else {
+							this._temporaryVariables.Remove("username");
+							this._state = State.Default;
+							this.SendMessage("5.7.8 Authentication credentials invalid", 535);
+						}
+						break;
+					
+					case State.AuthenticateLoginPassword:
+						this._temporaryVariables["password"] = Encoding.UTF8.GetString(Convert.FromBase64String(e.Line)).Trim();
+						this._state = State.Default;
+						if (this._temporaryVariables["password"] != String.Empty) {
+							string username = this._temporaryVariables["username"];
+							string password = this._temporaryVariables["password"];
+							this._temporaryVariables.Remove("username");
+							this._temporaryVariables.Remove("password");
+
+							if (this._user.RefreshByUsernamePassword(username, password) || this._user.RefreshByEMailPassword(username, password)) {
+								this.SendMessage("2.7.0 Authentication Succeeded", 235);
+							} else {
+								this.SendMessage("5.7.8 Authentication credentials invalid", 535);
+							}
+						} else {
+							this.SendMessage("5.7.8 Authentication credentials invalid", 535);
+						}
+						break;
+					
 					case State.AuthenticateCramMD5:
 						List<string> wordsCramMD5 = this.GetWordsFromBase64EncodedLine(e.Line);
 						
@@ -107,7 +144,7 @@ namespace eMailServer {
 									this.SendMessage(capabilities, 250);
 								}
 							} else if (e.Line.StartsWith("AUTH ")) {
-								Match authMatch = Regex.Match(e.Line, @"^AUTH\s+(PLAIN|CRAM-MD5)(.*)?", RegexOptions.IgnoreCase);
+								Match authMatch = Regex.Match(e.Line, @"^AUTH\s+(PLAIN|CRAM-MD5|LOGIN)(.*)?", RegexOptions.IgnoreCase);
 								if (authMatch.Success) {
 									switch(authMatch.Groups[1].Value.ToUpper()) {
 										case "PLAIN":
@@ -132,6 +169,11 @@ namespace eMailServer {
 											} else {
 												this.SendMessage("5.7.8 Authentication credentials invalid", 535);
 											}
+											break;
+										
+										case "LOGIN":
+											this._state = State.AuthenticateLoginUsername;
+											this.SendMessage(Convert.ToBase64String(Encoding.UTF8.GetBytes("Username:")), 334);
 											break;
 
 										case "CRAM-MD5":

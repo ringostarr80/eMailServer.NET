@@ -21,6 +21,8 @@ namespace TcpRequestHandler {
 	public enum State {
 		Default,
 		AuthenticatePlain,
+		AuthenticateLoginUsername,
+		AuthenticateLoginPassword,
 		AuthenticateCramMD5
 	}
 
