@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<VisualStudioProject>
+<VisualStudioProject ToolsVersion="4.0">
   <CSHARP ProjectType="Local" ProductVersion="7.10.3077" SchemaVersion="2.0" ProjectGuid="{6D765924-73E9-49AE-8A97-DA24958A540C}">
     <Build>
       <Settings ApplicationIcon="" AssemblyKeyContainerName="" AssemblyName="Bdev.Net.Dns" AssemblyOriginatorKeyFile="" DefaultClientScript="JScript" DefaultHTMLPageLayout="Grid" DefaultTargetSchema="IE50" DelaySign="false" OutputType="Library" PreBuildEvent="" PostBuildEvent="" RootNamespace="Bdev.Net.Dns" RunPostBuildEvent="OnBuildSuccess" StartupObject="">
@@ -42,7 +42,6 @@
     <OutputType>Library</OutputType>
     <RootNamespace>Bdev.Net.Dns</RootNamespace>
     <AssemblyName>Bdev.Net.Dns</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' " xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <DebugSymbols>true</DebugSymbols>
