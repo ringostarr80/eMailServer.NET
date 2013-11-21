@@ -69,8 +69,11 @@ namespace TcpRequestHandler {
 			new AutoResetEvent(false)
 		};
 		protected static Logger logger = LogManager.GetCurrentClassLogger();
+		protected TcpClient _tcpClient;
 		protected NetworkStream _stream = null;
-		protected SslServerStream _sslStream = null;
+		protected SslServerStream _sslServerStream = null;
+		protected SslStream _sslClientStream = null;
+		protected bool _isServer = true;
 		protected bool _streamClosed = false;
 		private Stream _currentUsedStream = null;
 		protected IPEndPoint _remoteEndPoint = null;
@@ -82,7 +85,7 @@ namespace TcpRequestHandler {
 		public static string ServerKeyFilename { get { return _serverKeyFilename; } }
 
 		public bool Verbose { get { return this._verbose; } set { this._verbose = value; } }
-		public bool SslIsActive { get { return (this._sslStream != null) ? true : false; } }
+		public bool SslIsActive { get { return (this._sslServerStream != null || this._sslClientStream != null) ? true : false; } }
 		
 		public event TcpRequestEventHandler Connected;
 		public event TcpRequestEventHandler Disconnected;
@@ -96,8 +99,19 @@ namespace TcpRequestHandler {
 			this.Init(client);
 		}
 
+		public TcpRequestHandler(TcpClient client, bool isServer) {
+			this._isServer = isServer;
+			this.Init(client);
+		}
+
 		public TcpRequestHandler(TcpClient client, int sslPort) {
 			this._sslPort = sslPort;
+			this.Init(client);
+		}
+
+		public TcpRequestHandler(TcpClient client, int sslPort, bool isServer) {
+			this._sslPort = sslPort;
+			this._isServer = isServer;
 			this.Init(client);
 		}
 
@@ -109,6 +123,7 @@ namespace TcpRequestHandler {
 		/// </param>
 		/// <see cref="http://docs.go-mono.com/?link=T%3aMono.Security.Protocol.Tls.SslServerStream"/>
 		private void Init(TcpClient client) {
+			this._tcpClient = client;
 			this._remoteEndPoint = (IPEndPoint)client.Client.RemoteEndPoint;
 			this._localEndPoint = (IPEndPoint)client.Client.LocalEndPoint;
 			
@@ -138,8 +153,12 @@ namespace TcpRequestHandler {
 			}
 		}
 
-		protected void SendMessage(string message, string status) {
-			byte[] msg = Encoding.UTF8.GetBytes(String.Format("{0} {1}\r\n", status, message));
+		public void SendMessage(string message) {
+			this.SendMessage(message, String.Empty);
+		}
+
+		public void SendMessage(string message, string status) {
+			byte[] msg = (status != String.Empty) ? Encoding.UTF8.GetBytes(String.Format("{0} {1}\r\n", status, message)) : Encoding.UTF8.GetBytes(String.Format("{0}\r\n", message));
 			try {
 				this._currentUsedStream.Write(msg, 0, msg.Length);
 				logger.Info(String.Format("[{0}:{1}] to [{2}:{3}] message sent: {4} {5}", this._localEndPoint.Address.ToString(), this._localEndPoint.Port, this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, status, message));
@@ -148,7 +167,7 @@ namespace TcpRequestHandler {
 			}
 		}
 		
-		protected void SendMessage(string message, int status) {
+		public void SendMessage(string message, int status) {
 			this.SendMessage(message, status.ToString());
 		}
 		
@@ -189,6 +208,7 @@ namespace TcpRequestHandler {
 		}
 		
 		public void Close() {
+			this.OnTcpRequestDisconnected(new TcpRequestEventArgs(this._remoteEndPoint, this._localEndPoint));
 			((AutoResetEvent)this._waitHandles[0]).Set();
 		}
 		
@@ -208,8 +228,9 @@ namespace TcpRequestHandler {
 			}
 		}
 
-		protected bool StartTls() {
+		public bool StartTls() {
 			if (this.SslIsActive) {
+				Console.WriteLine("if (this.SslIsActive)");
 				return true;
 			}
 
@@ -222,35 +243,53 @@ namespace TcpRequestHandler {
 					_serverCertificate = new X509Certificate(certificateBytes);
 				}
 
-				this._sslStream = new SslServerStream(this._stream, _serverCertificate, false, false);
-				this._sslStream.PrivateKeyCertSelectionDelegate += new PrivateKeySelectionCallback((X509Certificate certificate, string targetHost) => {
-					try {
-						PrivateKey key;
-						if (_serverKeyFilename == String.Empty) {
-							Assembly assembly = Assembly.GetExecutingAssembly();
-							Stream stream = assembly.GetManifestResourceStream("localhost.pvk");
-							byte[] privateKeyBytes = new byte[stream.Length];
-							stream.Read(privateKeyBytes, 0, Convert.ToInt32(stream.Length));
-							key = new PrivateKey(privateKeyBytes, "");
-							return key.RSA;
-						} else {
-							key = PrivateKey.CreateFromFile(_serverKeyFilename);
-							return key.RSA;
-						}
-					} catch(Exception ex) {
-						Console.WriteLine("Exception: " + ex.Message);
-					}
-
-					return null;
+				Console.WriteLine("lalelu1");
+				if (this._isServer) {
+					Console.WriteLine("if (this._isServer)");
+					this._sslServerStream = new SslServerStream(this._stream, _serverCertificate, false, false);
+					this._sslServerStream.PrivateKeyCertSelectionDelegate += new PrivateKeySelectionCallback(this.PrivateKeySelectionCallback);
+					this._currentUsedStream = this._sslServerStream;
+				} else {
+					Console.WriteLine("if (!this._isServer)");
+					//this._sslClientStream = new SslClientStream(this._stream, "mail.gmx.net", false);
+					this._sslClientStream = new SslStream(this._stream);
+					//this._sslClientStream.PrivateKeyCertSelectionDelegate += new PrivateKeySelectionCallback(this.PrivateKeySelectionCallback);
+					this._sslClientStream.AuthenticateAsClient("mail.gmx.net", new X509CertificateCollection(new X509Certificate[] {_serverCertificate}), SslProtocols.Default, false);
+					this._currentUsedStream = this._sslClientStream;
 				}
-				);
-				this._currentUsedStream = this._sslStream;
+
+				Console.WriteLine("bar");
 				return true;
 			} catch(Exception ex) {
-				this._sslStream = null;
+				this._sslServerStream = null;
+				this._sslClientStream = null;
 				logger.ErrorException(ex.Message, ex);
 				return false;
 			}
+		}
+
+		private AsymmetricAlgorithm PrivateKeySelectionCallback(X509Certificate certificate, string targetHost) {
+			Console.WriteLine("SslStream.PrivateKeyCertSelectionDelegate");
+			try {
+				PrivateKey key;
+				if (_serverKeyFilename == String.Empty) {
+					Assembly assembly = Assembly.GetExecutingAssembly();
+					Stream stream = assembly.GetManifestResourceStream("localhost.pvk");
+					byte[] privateKeyBytes = new byte[stream.Length];
+					stream.Read(privateKeyBytes, 0, Convert.ToInt32(stream.Length));
+					key = new PrivateKey(privateKeyBytes, "");
+					Console.WriteLine("foo");
+					return key.RSA;
+				} else {
+					key = PrivateKey.CreateFromFile(_serverKeyFilename);
+					Console.WriteLine("foo");
+					return key.RSA;
+				}
+			} catch(Exception ex) {
+				Console.WriteLine("Exception: " + ex.Message);
+			}
+			Console.WriteLine("null");
+			return null;
 		}
 
 		public static void SetServerCertificate(string filename) {

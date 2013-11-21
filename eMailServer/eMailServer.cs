@@ -12,6 +12,9 @@ using CommandLine;
 using CommandLine.Text;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using MongoDB.Driver.Builders;
+using MongoDB.Driver.Linq;
+
 using NLog;
 using TcpRequestHandler;
 
@@ -48,6 +51,8 @@ namespace eMailServer {
 			if (Options.Check) {
 				Check();
 			}
+
+			CheckIfMailsHaveToBeSend();
 			
 			HttpListener httpListener = null;
 			TcpListener smtpListener = null;
@@ -259,7 +264,6 @@ namespace eMailServer {
 			MongoServer mongoServer = MyMongoDB.GetServer();
 			
 			MongoDatabase mongoDatabase = mongoServer.GetDatabase("email");
-			//MongoCollection<eMailEntity> mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
 			MongoCollection<LazyBsonDocument> mongoCollection = mongoDatabase.GetCollection<LazyBsonDocument>("mails");
 			
 			MongoCursor<LazyBsonDocument> mongoCursor = mongoCollection.FindAll();
@@ -281,6 +285,35 @@ namespace eMailServer {
 			}
 			
 			Console.WriteLine("precheck finished...");
+		}
+
+		private static void CheckIfMailsHaveToBeSend() {
+			logger.Info("check if mails have to be sent.");
+
+			MongoServer mongoServer = MyMongoDB.GetServer();
+			MongoDatabase mongoDatabase = mongoServer.GetDatabase("email");
+			MongoCollection<LazyBsonDocument> mongoCollection = mongoDatabase.GetCollection<LazyBsonDocument>("users");
+
+			MongoCursor<LazyBsonDocument> mongoCursor = mongoCollection.FindAll();
+			foreach(LazyBsonDocument bsonDocument in mongoCursor) {
+				if (Options.Verbose) {
+					Console.WriteLine("checking user-id: " + bsonDocument["_id"].ToString() + "; username: " + bsonDocument["Username"].ToString());
+				}
+
+				try {
+					MongoDatabase mongoUserDatabase = mongoServer.GetDatabase("email_user_" + bsonDocument["_id"].ToString());
+					MongoCollection<LazyBsonDocument> mongoUserCollection = mongoUserDatabase.GetCollection<LazyBsonDocument>("mails");
+					MongoCursor<LazyBsonDocument> mongoUserCursor = mongoUserCollection.Find(Query.EQ("Folder", "SENT"));
+					foreach(LazyBsonDocument bsonUserDocument in mongoUserCursor) {
+						Console.WriteLine("found email in SENT-Folder: " + bsonUserDocument["_id"].ToString());
+						eMail userMail = new eMail(bsonUserDocument);
+						userMail.Send();
+						break;
+					}
+				} catch(Exception ex) {
+					logger.ErrorException(ex.Message, ex);
+				}
+			}
 		}
 	}
 }

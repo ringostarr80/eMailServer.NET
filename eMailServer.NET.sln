@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HttpPostRequest", "HttpPost
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TcpRequestHandler", "TcpRequestHandler\TcpRequestHandler.csproj", "{4C7E0285-36EE-4367-8662-B7B8D6244634}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bdev.Net.Dns", "DnsLookup\Bdev.Net.Dns\Bdev.Net.Dns.csproj", "{749FC4D3-835C-462F-ACA0-D6A0CD857C04}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -25,6 +27,10 @@ Global
 		{652F6A4A-FDAB-4C99-A9A4-95E19042173A}.Debug|x86.Build.0 = Debug|x86
 		{652F6A4A-FDAB-4C99-A9A4-95E19042173A}.Release|x86.ActiveCfg = Release|x86
 		{652F6A4A-FDAB-4C99-A9A4-95E19042173A}.Release|x86.Build.0 = Release|x86
+		{749FC4D3-835C-462F-ACA0-D6A0CD857C04}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{749FC4D3-835C-462F-ACA0-D6A0CD857C04}.Debug|x86.Build.0 = Debug|Any CPU
+		{749FC4D3-835C-462F-ACA0-D6A0CD857C04}.Release|x86.ActiveCfg = Release|Any CPU
+		{749FC4D3-835C-462F-ACA0-D6A0CD857C04}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = eMailServer\eMailServer.csproj

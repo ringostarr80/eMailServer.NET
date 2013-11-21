@@ -118,5 +118,9 @@
       <Project>{4C7E0285-36EE-4367-8662-B7B8D6244634}</Project>
       <Name>TcpRequestHandler</Name>
     </ProjectReference>
+    <ProjectReference Include="..\DnsLookup\Bdev.Net.Dns\Bdev.Net.Dns.csproj">
+      <Project>{749FC4D3-835C-462F-ACA0-D6A0CD857C04}</Project>
+      <Name>Bdev.Net.Dns</Name>
+    </ProjectReference>
   </ItemGroup>
 </Project>

@@ -1,29 +1,27 @@
 ﻿<Properties GitUserInfo="UsingMD">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="eMailServer/ImapServer.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="eMailServer/eMail.cs">
     <Files>
-      <File FileName="eMailServer/eMailServer.cs" Line="262" Column="103" />
+      <File FileName="eMailServer/eMailServer.cs" Line="311" Column="13" />
       <File FileName="eMailServer/ImapServer.cs" Line="167" Column="21" />
-      <File FileName="eMailServer/SmtpServer.cs" Line="156" Column="10" />
-      <File FileName="TcpRequestHandler/ImapRequestHandler.cs" Line="12" Column="3" />
-      <File FileName="TcpRequestHandler/SmtpRequestHandler.cs" Line="26" Column="3" />
-      <File FileName="TcpRequestHandler/TcpRequestHandler.cs" Line="137" Column="5" />
-      <File FileName="eMailServer/eMail.cs" Line="143" Column="5" />
+      <File FileName="eMailServer/SmtpServer.cs" Line="22" Column="38" />
+      <File FileName="TcpRequestHandler/ImapRequestHandler.cs" Line="11" Column="55" />
+      <File FileName="TcpRequestHandler/SmtpRequestHandler.cs" Line="46" Column="115" />
+      <File FileName="TcpRequestHandler/TcpRequestHandler.cs" Line="211" Column="102" />
+      <File FileName="eMailServer/eMail.cs" Line="200" Column="95" />
       <File FileName="eMailServer/eMailAddress.cs" Line="24" Column="4" />
-      <File FileName="eMailServer/User.cs" Line="322" Column="30" />
-      <File FileName="eMailServer/Entities/eMailFolderEntity.cs" Line="8" Column="21" />
+      <File FileName="eMailServer/User.cs" Line="308" Column="6" />
       <File FileName="eMailServer/Entities/eMailEntity.cs" Line="15" Column="37" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
         <State expanded="True">
           <Node name="eMailServer" expanded="True">
+            <Node name="References" expanded="True" />
             <Node name="Entities" expanded="True" />
-            <Node name="ImapServer.cs" selected="True" />
+            <Node name="eMail.cs" selected="True" />
           </Node>
-          <Node name="TcpRequestHandler" expanded="True">
-            <Node name="certificates" expanded="True" />
-          </Node>
+          <Node name="TcpRequestHandler" expanded="True" />
         </State>
       </Pad>
       <Pad Id="ClassPad">

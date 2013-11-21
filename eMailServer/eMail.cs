@@ -1,12 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Net;
+using System.Net.Mail;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
 using MongoDB.Driver.Linq;
+using Bdev.Net.Dns;
 using NLog;
 
 namespace eMailServer {
@@ -38,6 +43,17 @@ namespace eMailServer {
 		public DateTime Time { get { return this._time; } }
 
 		public string MailFrom { get { return this._mailFrom; } }
+
+		public string MailFromDomain {
+			get {
+				Match mailDomainMatch = Regex.Match(this._mailFrom, "@(.+)", RegexOptions.Compiled);
+				if (mailDomainMatch.Success) {
+					return mailDomainMatch.Groups[1].Value;
+				}
+
+				return String.Empty;
+			}
+		}
 
 		public string RecipientTo { get { return this._recipientTo; } }
 
@@ -123,7 +139,7 @@ namespace eMailServer {
 			if (bsonDocument["RecipientTo"] != null) {
 				this.SetRecipient(bsonDocument["RecipientTo"].AsString);
 			}
-			if (bsonDocument["HeaderReplyTo"] != null) {
+			if (bsonDocument["HeaderReplyTo"] != null && !bsonDocument["HeaderReplyTo"].IsBsonNull) {
 				BsonDocument bsonHeaderReplyTo = bsonDocument["HeaderReplyTo"].AsBsonDocument;
 				if (bsonHeaderReplyTo["Name"] != null && bsonHeaderReplyTo["Address"] != null) {
 					this.SetReplyTo(bsonHeaderReplyTo["Name"].AsString, bsonHeaderReplyTo["Address"].AsString);
@@ -143,8 +159,92 @@ namespace eMailServer {
 			}
 		}
 
-		public void Send() {
+		private static IPAddress GetDnsAddress() {
+			NetworkInterface[] networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
+			foreach(System.Net.NetworkInformation.NetworkInterface networkInterface in networkInterfaces) {
+				if (networkInterface.OperationalStatus == OperationalStatus.Up) {
+					IPInterfaceProperties ipProperties = networkInterface.GetIPProperties();
+					IPAddressCollection dnsAddresses = ipProperties.DnsAddresses;
+					foreach(IPAddress dnsAddress in dnsAddresses) {
+						return dnsAddress;
+					}
+				}
+			}
 
+			return null;
+		}
+
+		public bool Send() {
+			IPAddress dnsServerAddress = GetDnsAddress();
+			if (dnsServerAddress == null) {
+				logger.Error("cannot find DNS-Server address!");
+				return false;
+			}
+
+			string mailDomain = String.Empty;
+			Match mailDomainMatch = Regex.Match(this.RecipientTo, "@(.+)", RegexOptions.Compiled);
+			if (mailDomainMatch.Success) {
+				mailDomain = mailDomainMatch.Groups[1].Value;
+			} else {
+				return false;
+			}
+
+			MXRecord[] records = Resolver.MXLookup(mailDomain, dnsServerAddress);
+			if (records.Length == 0) {
+				return false;
+			}
+
+			bool result = false;
+			foreach(MXRecord record in records) {
+				TcpClient client = new TcpClient(record.DomainName, 25);
+				if (!client.Connected) {
+					continue;
+				}
+				SmtpRequestHandler requestHandler = new SmtpRequestHandler(client, eMailServer.Options.SecureSmtpPort, false);
+				requestHandler.Connected += (object sender, TcpRequestHandler.TcpRequestEventArgs e) => {
+					if (eMailServer.Options.Verbose) {
+						logger.Info("Connected to " + e.RemoteEndPoint.Address.ToString() + ":" + e.RemoteEndPoint.Port);
+					}
+				};
+				requestHandler.Disconnected += (object sender, TcpRequestHandler.TcpRequestEventArgs e) => {
+					if (eMailServer.Options.Verbose) {
+						logger.Info("Disconnected from " + e.RemoteEndPoint.Address.ToString() + ":" + e.RemoteEndPoint.Port);
+					}
+				};
+				requestHandler.CommandReceived += (object sender, SmtpCommandReceivedEventArgs e) => {
+					Console.WriteLine("command received => status: " + e.Status + "; message: " + e.Message);
+					switch(e.Status) {
+						case 220:
+							requestHandler.SendMessage(this.MailFromDomain, "EHLO");
+							break;
+						
+						case 250:
+							if (e.Message == "STARTTLS") {
+								//if (requestHandler.StartTls()) {
+								//Console.WriteLine("send message Go ahead");
+								//requestHandler.SendMessage("Go ahead", "220");
+								//Console.WriteLine("message Go ahead was sent");
+								//}
+							}
+							requestHandler.SendMessage("MAIL FROM:<" + this.MailFrom + ">");
+							break;
+
+						case 530: // Authentication required
+							break;
+
+						case 554:
+							requestHandler.SendMessage("QUIT");
+							requestHandler.Close();
+							break;
+					}
+				};
+				requestHandler.Start();
+				requestHandler.WaitForClosing();
+				result = true;
+				break;
+			}
+
+			return result;
 		}
 
 		public void ParseData(string data) {
