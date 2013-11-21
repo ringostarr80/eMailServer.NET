@@ -233,6 +233,7 @@ namespace eMailServer {
 						
 						case 250:
 							if (e.Message == "STARTTLS") {
+								requestHandler.StartTls();
 								//if (requestHandler.StartTls()) {
 								//Console.WriteLine("send message Go ahead");
 								//requestHandler.SendMessage("Go ahead", "220");
