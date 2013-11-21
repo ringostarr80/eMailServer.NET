@@ -4,25 +4,21 @@
 // rob@bigdevelopments.co.uk  This file and the code contained within is freeware and may be
 // distributed and edited without restriction.
 // 
-
 #endregion
 
 using System;
 using System.Net;
 
-namespace Bdev.Net.Dns
-{
+namespace Bdev.Net.Dns {
 	/// <summary>
 	/// ANAME Resource Record (RR) (RFC1035 3.4.1)
 	/// </summary>
-	public class ANameRecord : RecordBase
-	{
+	public class ANameRecord : RecordBase {
 		// An ANAME records consists simply of an IP address
 		internal IPAddress _ipAddress;
 
 		// expose this IP address r/o to the world
-		public IPAddress IPAddress
-		{
+		public IPAddress IPAddress {
 			get { return _ipAddress; }
 		}
 
@@ -30,8 +26,7 @@ namespace Bdev.Net.Dns
 		/// Constructs an ANAME record by reading bytes from a return message
 		/// </summary>
 		/// <param name="pointer">A logical pointer to the bytes holding the record</param>
-		internal ANameRecord(Pointer pointer)
-		{
+		internal ANameRecord(Pointer pointer) {
 			byte b1 = pointer.ReadByte();
 			byte b2 = pointer.ReadByte();
 			byte b3 = pointer.ReadByte();
@@ -41,8 +36,7 @@ namespace Bdev.Net.Dns
 			_ipAddress = IPAddress.Parse(string.Format("{0}.{1}.{2}.{3}", b1, b2, b3, b4));
 		}
 
-		public override string ToString()
-		{
+		public override string ToString() {
 			return _ipAddress.ToString();
 		}
 	}

@@ -38,7 +38,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.50727</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{9B0111B6-5AED-427D-B546-521F6116F474}</ProjectGuid>
+    <ProjectGuid>{EA17E2C3-E3D6-405B-B781-A90C3AE0CE2B}</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>Bdev.Net.Dns</RootNamespace>
     <AssemblyName>Bdev.Net.Dns</AssemblyName>

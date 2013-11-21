@@ -4,7 +4,6 @@
 // rob@bigdevelopments.co.uk  This file and the code contained within is freeware and may be
 // distributed and edited without restriction.
 // 
-
 #endregion
 
 using System;
@@ -12,13 +11,11 @@ using System.Collections;
 using System.Net;
 using System.Net.Sockets;
 
-namespace Bdev.Net.Dns
-{
+namespace Bdev.Net.Dns {
 	/// <summary>
 	/// Summary description for Dns.
 	/// </summary>
-	public sealed class Resolver
-	{
+	public sealed class Resolver {
 		const int		_dnsPort = 53;
 		const int		_udpRetryAttempts = 2;
 		static int		_uniqueId;
@@ -26,8 +23,7 @@ namespace Bdev.Net.Dns
 		/// <summary>
 		/// Private constructor - this static class should never be instantiated
 		/// </summary>
-		private Resolver()
-		{
+		private Resolver() {
 			// no implementation
 		}	
 
@@ -38,11 +34,14 @@ namespace Bdev.Net.Dns
 		/// <param name="domain">domain name to retreive MX RRs for</param>
 		/// <param name="dnsServer">the server we're going to ask</param>
 		/// <returns>An array of MXRecords</returns>
-		public static MXRecord[] MXLookup(string domain, IPAddress dnsServer)
-		{
+		public static MXRecord[] MXLookup(string domain, IPAddress dnsServer) {
 			// check the inputs
-			if (domain == null) throw new ArgumentNullException("domain");
-			if (dnsServer == null)  throw new ArgumentNullException("dnsServer");
+			if (domain == null) {
+				throw new ArgumentNullException("domain");
+			}
+			if (dnsServer == null) {
+				throw new ArgumentNullException("dnsServer");
+			}
 
 			// create a request for this
 			Request request = new Request();
@@ -54,17 +53,17 @@ namespace Bdev.Net.Dns
 			Response response = Lookup(request, dnsServer);
 
 			// if we didn't get a response, then return null
-			if (response == null) return null;
+			if (response == null) {
+				return null;
+			}
 				
 			// create a growable array of MX records
 			ArrayList resourceRecords = new ArrayList();
 
 			// add each of the answers to the array
-			foreach (Answer answer in response.Answers)
-			{
+			foreach(Answer answer in response.Answers) {
 				// if the answer is an MX record
-				if (answer.Record.GetType() == typeof(MXRecord))
-				{
+				if (answer.Record.GetType() == typeof(MXRecord)) {
 					// add it to our array
 					resourceRecords.Add(answer.Record);
 				}
@@ -91,11 +90,14 @@ namespace Bdev.Net.Dns
 		/// <param name="request">The logical request to send to the server</param>
 		/// <param name="dnsServer">The IP address of the DNS server we are querying</param>
 		/// <returns>The logical response from the DNS server or null if no response</returns>
-		public static Response Lookup(Request request, IPAddress dnsServer)
-		{
+		public static Response Lookup(Request request, IPAddress dnsServer) {
 			// check the inputs
-			if (request == null) throw new ArgumentNullException("request");
-			if (dnsServer == null) throw new ArgumentNullException("dnsServer");
+			if (request == null) {
+				throw new ArgumentNullException("request");
+			}
+			if (dnsServer == null) {
+				throw new ArgumentNullException("dnsServer");
+			}
 			
 			// We will not catch exceptions here, rather just refer them to the caller
 
@@ -112,17 +114,14 @@ namespace Bdev.Net.Dns
 			return new Response(responseMessage);
 		}
 
-		private static byte[] UdpTransfer(IPEndPoint server, byte[] requestMessage)
-		{
+		private static byte[] UdpTransfer(IPEndPoint server, byte[] requestMessage) {
 			// UDP can fail - if it does try again keeping track of how many attempts we've made
 			int attempts = 0;
 
 			// try repeatedly in case of failure
-			while (attempts <= _udpRetryAttempts)
-			{
+			while(attempts <= _udpRetryAttempts) {
 				// firstly, uniquely mark this request with an id
-				unchecked
-				{
+				unchecked {
 					// substitute in an id unique to this lookup, the request has no idea about this
 					requestMessage[0] = (byte)(_uniqueId >> 8);
 					requestMessage[1] = (byte)_uniqueId;
@@ -140,25 +139,19 @@ namespace Bdev.Net.Dns
 				// RFC1035 states that the maximum size of a UDP datagram is 512 octets (bytes)
 				byte[] responseMessage = new byte[512];
 
-				try
-				{
+				try {
 					// wait for a response upto 1 second
 					socket.Receive(responseMessage);
 
 					// make sure the message returned is ours
-					if (responseMessage[0] == requestMessage[0] && responseMessage[1] == requestMessage[1])
-					{
+					if (responseMessage[0] == requestMessage[0] && responseMessage[1] == requestMessage[1]) {
 						// its a valid response - return it, this is our successful exit point
 						return responseMessage;
 					}
-				}
-				catch (SocketException)
-				{
+				} catch(SocketException) {
 					// failure - we better try again, but remember how many attempts
 					attempts++;
-				}
-				finally
-				{
+				} finally {
 					// increase the unique id
 					_uniqueId++;
 

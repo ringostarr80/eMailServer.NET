@@ -4,19 +4,16 @@
 // rob@bigdevelopments.co.uk  This file and the code contained within is freeware and may be
 // distributed and edited without restriction.
 // 
-
 #endregion
 
 using System;
 using System.Net;
 
-namespace Bdev.Net.Dns
-{
+namespace Bdev.Net.Dns {
 	/// <summary>
 	/// A Response is a logical representation of the byte data returned from a DNS query
 	/// </summary>
-	public class Response
-	{
+	public class Response {
 		// these are fields we're interested in from the message
 		private readonly ReturnCode			_returnCode;
 		private readonly bool				_authoritativeAnswer;
@@ -28,21 +25,20 @@ namespace Bdev.Net.Dns
 		private readonly AdditionalRecord[]	_additionalRecords;
 
 		// these fields are readonly outside the assembly - use r/o properties
-		public ReturnCode ReturnCode				{ get { return _returnCode;					}}
-		public bool AuthoritativeAnswer				{ get { return _authoritativeAnswer;		}}
-		public bool RecursionAvailable				{ get { return _recursionAvailable;			}}
-		public bool MessageTruncated				{ get { return _truncated;					}}
-		public Question[] Questions					{ get { return _questions;					}}
-		public Answer[] Answers						{ get { return _answers;					}}
-		public NameServer[] NameServers				{ get { return _nameServers;				}}
-		public AdditionalRecord[] AdditionalRecords	{ get { return _additionalRecords;			}}
+		public ReturnCode ReturnCode				{ get { return _returnCode; } }
+		public bool AuthoritativeAnswer				{ get { return _authoritativeAnswer; } }
+		public bool RecursionAvailable				{ get { return _recursionAvailable; } }
+		public bool MessageTruncated				{ get { return _truncated; } }
+		public Question[] Questions					{ get { return _questions; } }
+		public Answer[] Answers						{ get { return _answers; } }
+		public NameServer[] NameServers				{ get { return _nameServers; } }
+		public AdditionalRecord[] AdditionalRecords	{ get { return _additionalRecords; } }
 
 		/// <summary>
 		/// Construct a Response object from the supplied byte array
 		/// </summary>
 		/// <param name="message">a byte array returned from a DNS server query</param>
-		internal Response(byte[] message)
-		{
+		internal Response(byte[] message) {
 			// the bit flags are in bytes 2 and 3
 			byte flags1 = message[2];
 			byte flags2 = message[3];
@@ -51,7 +47,9 @@ namespace Bdev.Net.Dns
 			int returnCode = flags2 & 15;
 				
 			// if its in the reserved section, set to other
-			if (returnCode > 6) returnCode = 6;
+			if (returnCode > 6) {
+				returnCode = 6;
+			}
 			_returnCode = (ReturnCode)returnCode;
 
 			// other bit flags
@@ -69,29 +67,22 @@ namespace Bdev.Net.Dns
 			Pointer pointer = new Pointer(message, 12);
 
 			// and now populate them, they always follow this order
-			for (int index = 0; index < _questions.Length; index++)
-			{
-				try
-				{
+			for(int index = 0; index < _questions.Length; index++) {
+				try {
 					// try to build a quesion from the response
 					_questions[index] = new Question(pointer);
-				}
-				catch (Exception ex)
-				{
+				} catch(Exception ex) {
 					// something grim has happened, we can't continue
 					throw new InvalidResponseException(ex);
 				}
 			}
-			for (int index = 0; index < _answers.Length; index++)
-			{
+			for(int index = 0; index < _answers.Length; index++) {
 				_answers[index] = new Answer(pointer);
 			}
-			for (int index = 0; index < _nameServers.Length; index++)
-			{
+			for(int index = 0; index < _nameServers.Length; index++) {
 				_nameServers[index] = new NameServer(pointer);
 			}
-			for (int index = 0; index < _additionalRecords.Length; index++)
-			{
+			for(int index = 0; index < _additionalRecords.Length; index++) {
 				_additionalRecords[index] = new AdditionalRecord(pointer);
 			}
 		}
@@ -103,9 +94,8 @@ namespace Bdev.Net.Dns
 		/// <param name="message">byte array to look in</param>
 		/// <param name="position">position to look at</param>
 		/// <returns>short representation of the two bytes</returns>
-		private static short GetShort(byte[] message, int position)
-		{
-			return (short)(message[position]<<8 | message[position+1]);
+		private static short GetShort(byte[] message, int position) {
+			return (short)(message[position] << 8 | message[position + 1]);
 		}
 	}
 }
