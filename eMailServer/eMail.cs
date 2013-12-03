@@ -209,7 +209,7 @@ namespace eMailServer {
 
 			bool result = false;
 			foreach(MXRecord record in records) {
-				TcpClient client = new TcpClient(record.DomainName, 587);
+				TcpClient client = new TcpClient(record.DomainName, eMailServer.Options.SmtpPort);
 				if (!client.Connected) {
 					continue;
 				}
