@@ -1,23 +1,22 @@
 ﻿<Properties GitUserInfo="UsingMD">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="eMailServer/eMailServer.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="eMailServer/eMail.cs">
     <Files>
-      <File FileName="eMailServer/eMailServer.cs" Line="282" Column="28" />
+      <File FileName="eMailServer/eMailServer.cs" Line="277" Column="8" />
       <File FileName="eMailServer/ImapServer.cs" Line="167" Column="21" />
-      <File FileName="eMailServer/SmtpServer.cs" Line="22" Column="38" />
+      <File FileName="eMailServer/SmtpServer.cs" Line="80" Column="8" />
       <File FileName="TcpRequestHandler/ImapRequestHandler.cs" Line="11" Column="55" />
       <File FileName="TcpRequestHandler/SmtpRequestHandler.cs" Line="46" Column="115" />
-      <File FileName="TcpRequestHandler/TcpRequestHandler.cs" Line="211" Column="102" />
-      <File FileName="eMailServer/eMail.cs" Line="223" Column="9" />
+      <File FileName="TcpRequestHandler/TcpRequestHandler.cs" Line="25" Column="28" />
+      <File FileName="eMailServer/eMail.cs" Line="242" Column="9" />
       <File FileName="eMailServer/eMailAddress.cs" Line="24" Column="4" />
-      <File FileName="eMailServer/User.cs" Line="308" Column="6" />
+      <File FileName="eMailServer/User.cs" Line="188" Column="104" />
       <File FileName="eMailServer/Entities/eMailEntity.cs" Line="15" Column="37" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
         <State expanded="True" selected="True">
           <Node name="eMailServer" expanded="True">
-            <Node name="References" expanded="True" />
             <Node name="Entities" expanded="True" />
           </Node>
           <Node name="TcpRequestHandler" expanded="True" />

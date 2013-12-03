@@ -237,16 +237,16 @@ namespace TcpRequestHandler {
 			}
 
 			try {
-				if (_serverCertificate == null) {
-					Assembly assembly = Assembly.GetExecutingAssembly();
-					Stream stream = assembly.GetManifestResourceStream("localhost.cer");
-					byte[] certificateBytes = new byte[stream.Length];
-					stream.Read(certificateBytes, 0, Convert.ToInt32(stream.Length));
-					_serverCertificate = new X509Certificate(certificateBytes);
-				}
-
 				Console.WriteLine("lalelu1");
 				if (this._isServer) {
+					if (_serverCertificate == null) {
+						Assembly assembly = Assembly.GetExecutingAssembly();
+						Stream stream = assembly.GetManifestResourceStream("localhost.cer");
+						byte[] certificateBytes = new byte[stream.Length];
+						stream.Read(certificateBytes, 0, Convert.ToInt32(stream.Length));
+						_serverCertificate = new X509Certificate(certificateBytes);
+					}
+
 					Console.WriteLine("if (this._isServer)");
 					this._sslServerStream = new SslServerStream(this._stream, _serverCertificate, false, false);
 					this._sslServerStream.PrivateKeyCertSelectionDelegate += new PrivateKeySelectionCallback(this.PrivateKeySelectionCallback);
@@ -254,9 +254,9 @@ namespace TcpRequestHandler {
 				} else {
 					Console.WriteLine("if (!this._isServer)");
 					//this._sslClientStream = new SslClientStream(this._stream, "mail.gmx.net", false);
-					this._sslClientStream = new SslStream(this._stream);
+					this._sslClientStream = new SslStream(this._stream, false, new RemoteCertificateValidationCallback(CertificateValidationCallback));
 					//this._sslClientStream.PrivateKeyCertSelectionDelegate += new PrivateKeySelectionCallback(this.PrivateKeySelectionCallback);
-					this._sslClientStream.AuthenticateAsClient("mail.gmx.net", new X509CertificateCollection(new X509Certificate[] {_serverCertificate}), SslProtocols.Default, false);
+					this._sslClientStream.AuthenticateAsClient("SslStreamCert");
 					this._currentUsedStream = this._sslClientStream;
 				}
 
@@ -267,6 +267,16 @@ namespace TcpRequestHandler {
 				this._sslClientStream = null;
 				logger.ErrorException(ex.Message, ex);
 				return false;
+			}
+		}
+
+		static bool CertificateValidationCallback(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors) {
+			if (sslPolicyErrors != SslPolicyErrors.None) {
+				Console.WriteLine("SSL Certificate Validation Error!");
+				Console.WriteLine(sslPolicyErrors.ToString());
+				return false;
+			} else {
+				return true;
 			}
 		}
 
