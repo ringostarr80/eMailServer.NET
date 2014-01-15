@@ -23,7 +23,10 @@ namespace TcpRequestHandler {
 		AuthenticatePlain,
 		AuthenticateLoginUsername,
 		AuthenticateLoginPassword,
-		AuthenticateCramMD5
+		AuthenticateCramMD5,
+		MailFromSent,
+		RecipientToSent,
+		DataSent
 	}
 
 	public class TcpRequestEventArgs : EventArgs {
@@ -61,7 +64,6 @@ namespace TcpRequestHandler {
 	public class TcpRequestHandler : IRequestHandler {
 		private const byte InnerPadding = 0x36;
 		private const byte OuterPadding = 0x5C;
-
 		protected State _state = State.Default;
 		private static string _serverCertificateFilename = String.Empty;
 		private static string _serverKeyFilename = String.Empty;
@@ -83,10 +85,13 @@ namespace TcpRequestHandler {
 		protected int _messageCounter = 0;
 		protected bool _verbose = true;
 		protected string _currentCramMD5Challenge = String.Empty;
+
 		public static string ServerCertificateFilename { get { return _serverCertificateFilename; } }
+
 		public static string ServerKeyFilename { get { return _serverKeyFilename; } }
 
 		public bool Verbose { get { return this._verbose; } set { this._verbose = value; } }
+
 		public bool SslIsActive { get { return (this._sslServerStream != null || this._sslClientStream != null) ? true : false; } }
 		
 		public event TcpRequestEventHandler Connected;
@@ -254,7 +259,7 @@ namespace TcpRequestHandler {
 				} else {
 					Console.WriteLine("if (!this._isServer)");
 					//this._sslClientStream = new SslClientStream(this._stream, "mail.gmx.net", false);
-					this._sslClientStream = new SslStream(this._stream, false, new RemoteCertificateValidationCallback(CertificateValidationCallback));
+					this._sslClientStream = new SslStream(this._stream, true, new RemoteCertificateValidationCallback(CertificateValidationCallback));
 					//this._sslClientStream.PrivateKeyCertSelectionDelegate += new PrivateKeySelectionCallback(this.PrivateKeySelectionCallback);
 					this._sslClientStream.AuthenticateAsClient("SslStreamCert");
 					this._currentUsedStream = this._sslClientStream;
