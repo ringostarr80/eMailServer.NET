@@ -26,7 +26,8 @@ namespace TcpRequestHandler {
 		AuthenticateCramMD5,
 		MailFromSent,
 		RecipientToSent,
-		DataSent
+		DataSent,
+		MessageSent
 	}
 
 	public class TcpRequestEventArgs : EventArgs {
