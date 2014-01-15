@@ -2,6 +2,14 @@
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
   <MonoDevelop.Ide.Workbench ActiveDocument="eMailServer/eMailServer.cs">
     <Files>
+      <File FileName="eMailServer/eMailServer.cs" Line="32" Column="4" />
+      <File FileName="eMailServer/eMail.cs" Line="1" Column="1" />
+      <File FileName="eMailServer/User.cs" Line="1" Column="1" />
+      <File FileName="eMailServer/MongoDB.cs" Line="1" Column="1" />
+      <File FileName="eMailServer/ImapServer.cs" Line="1" Column="1" />
+      <File FileName="TcpRequestHandler/ImapRequestHandler.cs" Line="1" Column="1" />
+      <File FileName="TcpRequestHandler/TcpRequestHandler.cs" Line="1" Column="5208" />
+      <File FileName="eMailServer/eMailAddress.cs" Line="1" Column="1" />
       <File FileName="eMailServer/eMailServer.cs" Line="30" Column="24" />
       <File FileName="eMailServer/SmtpRequestHandler.cs" Line="1" Column="1" />
       <File FileName="eMailServer/eMail.cs" Line="1" Column="1" />
@@ -9,7 +17,7 @@
       <File FileName="eMailServer/MongoDB.cs" Line="1" Column="1" />
       <File FileName="eMailServer/ImapServer.cs" Line="1" Column="1" />
       <File FileName="TcpRequestHandler/ImapRequestHandler.cs" Line="1" Column="1" />
-      <File FileName="TcpRequestHandler/TcpRequestHandler.cs" Line="155" Column="15" />
+      <File FileName="TcpRequestHandler/TcpRequestHandler.cs" Line="1" Column="1" />
       <File FileName="eMailServer/eMailAddress.cs" Line="1" Column="1" />
     </Files>
     <Pads>

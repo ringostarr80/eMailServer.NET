@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HttpPostRequest", "HttpPost
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TcpRequestHandler", "TcpRequestHandler\TcpRequestHandler.csproj", "{4C7E0285-36EE-4367-8662-B7B8D6244634}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bdev.Net.Dns", "DnsLookup\Bdev.Net.Dns\Bdev.Net.Dns.csproj", "{EA17E2C3-E3D6-405B-B781-A90C3AE0CE2B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -25,6 +27,9 @@ Global
 		{652F6A4A-FDAB-4C99-A9A4-95E19042173A}.Debug|x86.Build.0 = Debug|x86
 		{652F6A4A-FDAB-4C99-A9A4-95E19042173A}.Release|x86.ActiveCfg = Release|x86
 		{652F6A4A-FDAB-4C99-A9A4-95E19042173A}.Release|x86.Build.0 = Release|x86
+		{EA17E2C3-E3D6-405B-B781-A90C3AE0CE2B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EA17E2C3-E3D6-405B-B781-A90C3AE0CE2B}.Release|x86.ActiveCfg = Release|Any CPU
+		{EA17E2C3-E3D6-405B-B781-A90C3AE0CE2B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = eMailServer\eMailServer.csproj
@@ -34,14 +39,13 @@ Global
 		$1.ResourceNamePolicy = FileName
 		$0.TextStylePolicy = $2
 		$2.FileWidth = 120
-		$2.TabWidth = 4
-		$2.inheritsSet = Mono
+		$2.TabsToSpaces = False
+		$2.inheritsSet = VisualStudio
 		$2.inheritsScope = text/plain
 		$2.scope = text/x-csharp
 		$0.CSharpFormattingPolicy = $3
 		$3.IndentSwitchBody = True
 		$3.AlignEmbeddedUsingStatements = False
-		$3.AlignEmbeddedIfStatements = False
 		$3.NamespaceBraceStyle = EndOfLine
 		$3.ClassBraceStyle = EndOfLine
 		$3.InterfaceBraceStyle = EndOfLine
