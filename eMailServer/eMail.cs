@@ -18,7 +18,6 @@ using NLog;
 namespace eMailServer {
 	public class eMail {
 		private static Logger logger = LogManager.GetCurrentClassLogger();
-
 		private User _user = new User();
 		private string _id = "";
 		private string _clientName = String.Empty;
@@ -36,6 +35,7 @@ namespace eMailServer {
 		private List<string> _flags = new List<string>();
 		private List<KeyValuePair<string, string>> _rawHeader = new List<KeyValuePair<string, string>>();
 		private MongoServer _mongoServer = null;
+		protected TcpRequestHandler.State _state = TcpRequestHandler.State.Default;
 
 		public string Id { get { return this._id; } }
 
@@ -232,20 +232,49 @@ namespace eMailServer {
 							break;
 						
 						case 250:
-							if (e.Message == "STARTTLS") {
-								requestHandler.StartTls();
-								//if (requestHandler.StartTls()) {
-								//Console.WriteLine("send message Go ahead");
-								//requestHandler.SendMessage("Go ahead", "220");
-								//Console.WriteLine("message Go ahead was sent");
-								//}
+							switch(this._state) {
+								case TcpRequestHandler.State.MailFromSent:
+									requestHandler.SendMessage("RCPT TO:<" + this.RecipientTo + ">");
+									this._state = TcpRequestHandler.State.RecipientToSent;
+									break;
+								
+								case TcpRequestHandler.State.RecipientToSent:
+									requestHandler.SendMessage("DATA");
+									this._state = TcpRequestHandler.State.Default;
+									break;
+								
+								case TcpRequestHandler.State.Default:
+									if (e.Message == "STARTTLS") {
+										requestHandler.StartTls();
+										//if (requestHandler.StartTls()) {
+										//Console.WriteLine("send message Go ahead");
+										//requestHandler.SendMessage("Go ahead", "220");
+										//Console.WriteLine("message Go ahead was sent");
+										//}
+									}
+									requestHandler.SendMessage("MAIL FROM:<" + this.MailFrom + ">");
+									this._state = TcpRequestHandler.State.MailFromSent;
+									break;
 							}
-							requestHandler.SendMessage("MAIL FROM:<" + this.MailFrom + ">");
 							break;
-
+							
+						case 354: // Start Mail Input
+							requestHandler.SendMessage("From: <" + this.MailFrom + ">");
+							requestHandler.SendMessage("To: <" + this.RecipientTo + ">");
+							requestHandler.SendMessage("Subject: <" + this.Subject + ">");
+							requestHandler.SendMessage("");
+							requestHandler.SendMessage(this.Message);
+							requestHandler.SendMessage(".");
+							break;
+							
 						case 530: // Authentication required
 							break;
-
+						
+						case 550:
+							requestHandler.SendMessage("QUIT");
+							requestHandler.Close();
+							break;
+							
 						case 554:
 							requestHandler.SendMessage("QUIT");
 							requestHandler.Close();
