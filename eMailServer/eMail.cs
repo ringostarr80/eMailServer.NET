@@ -243,6 +243,12 @@ namespace eMailServer {
 									this._state = TcpRequestHandler.State.Default;
 									break;
 								
+								case TcpRequestHandler.State.MessageSent:
+									requestHandler.SendMessage("QUIT");
+									requestHandler.Close();
+									this._state = TcpRequestHandler.State.Default;
+									break;
+								
 								case TcpRequestHandler.State.Default:
 									if (e.Message == "STARTTLS") {
 										requestHandler.StartTls();
@@ -265,6 +271,7 @@ namespace eMailServer {
 							requestHandler.SendMessage("");
 							requestHandler.SendMessage(this.Message);
 							requestHandler.SendMessage(".");
+							this._state = TcpRequestHandler.State.MessageSent;
 							break;
 							
 						case 530: // Authentication required
