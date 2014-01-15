@@ -33,6 +33,9 @@
     <Reference Include="NLog">
       <HintPath>NLog.dll</HintPath>
     </Reference>
+    <Reference Include="System.Security" />
+    <Reference Include="System.Net" />
+    <Reference Include="Mono.Security" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
@@ -40,9 +43,21 @@
     <Compile Include="ImapRequestHandler.cs" />
     <Compile Include="TcpRequestHandler.cs" />
     <Compile Include="FetchFields.cs" />
+    <Compile Include="SmtpRequestHandler.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <None Include="NLog.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="certificates\" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="certificates\localhost.cer">
+      <LogicalName>localhost.cer</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="certificates\localhost.pvk">
+      <LogicalName>localhost.pvk</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 </Project>
