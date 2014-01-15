@@ -12,15 +12,13 @@ namespace eMailServer {
 	public class ImapServer : ImapRequestHandler {
 		protected new static Logger logger = LogManager.GetCurrentClassLogger();
 		private User _user = new User();
-		private ImapState _state = ImapState.Default;
 		private string _lastClientId = String.Empty;
-		private string _currentCramMD5Challenge = String.Empty;
 		
 		public ImapServer() : base() {
 			
 		}
 		
-		public ImapServer(TcpClient client) : base(client) {
+		public ImapServer(TcpClient client, int imapSslPort) : base(client, imapSslPort) {
 			this.Connected += (object sender, TcpRequestEventArgs e) => {
 				if (this.Verbose && e.RemoteEndPoint != null && e.LocalEndPoint != null) {
 					logger.Debug("connected from remote [{0}:{1}] to local [{2}:{3}]",
@@ -46,13 +44,13 @@ namespace eMailServer {
 			};
 			
 			this.LineReceived += (object sender, TcpLineReceivedEventArgs e) => {
-				logger.Info(String.Format("[{0}:{1}] Received Line: \"{2}\"", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, e.Line));
+				logger.Info(String.Format("[{0}:{1}] to [{2}:{3}] Received Line: \"{4}\"", this._remoteEndPoint.Address.ToString(), this._remoteEndPoint.Port, this._localEndPoint.Address.ToString(), this._localEndPoint.Port, e.Line));
 				
 				switch(this._state) {
-					case ImapState.AuthenticateCramMD5:
+					case State.AuthenticateCramMD5:
 						List<string> wordsCramMD5 = this.GetWordsFromBase64EncodedLine(e.Line);
 						
-						this._state = ImapState.Default;
+						this._state = State.Default;
 						if (wordsCramMD5.Count == 1) {
 							string[] splittedWords = wordsCramMD5[0].Split(new char[] {' '});
 							if (splittedWords.Length == 2) {
@@ -85,10 +83,20 @@ namespace eMailServer {
 						this._currentCramMD5Challenge = String.Empty;
 						break;
 						
-					case ImapState.AuthenticatePlain:
-						List<string> words = this.GetWordsFromBase64EncodedLine(e.Line);
+					case State.AuthenticatePlain:
+						List<string> words = new List<string>();
+						try {
+							words = this.GetWordsFromBase64EncodedLine(e.Line);
+						} catch(Exception) {
+							// maybe it is not base64-encoded
+							Match plainTextMatch = Regex.Match(e.Line, "\\s+LOGIN\\s+\"([^\"]+)\"\\s+\"([^\"]+)\"", RegexOptions.IgnoreCase);
+							if (plainTextMatch.Success) {
+								words.Add(plainTextMatch.Groups[1].Value);
+								words.Add(plainTextMatch.Groups[2].Value);
+							}
+						}
 						
-						this._state = ImapState.Default;
+						this._state = State.Default;
 						if (words.Count == 2) {
 							if (words[0] != String.Empty && words[1] != String.Empty) {
 								if (this._user.RefreshByUsernamePassword(words[0], words[1]) || this._user.RefreshByEMailPassword(words[0], words[1])) {
@@ -104,7 +112,7 @@ namespace eMailServer {
 						}
 						break;
 					
-					case ImapState.Default:
+					case State.Default:
 						Match clientCommandMatch = Regex.Match(e.Line, @"^([^\s]+)\s+(\w+)(\s.+)?", RegexOptions.IgnoreCase);
 						if (clientCommandMatch.Success) {
 							this._lastClientId = clientCommandMatch.Groups[1].Value;
@@ -115,7 +123,13 @@ namespace eMailServer {
 									break;
 		
 								case "CAPABILITY":
-									this.SendMessage("CAPABILITY IMAP4rev1 LOGINDISABLED AUTH=PLAIN AUTH=CRAM-MD5", "*");
+									string capabilities = "CAPABILITY IMAP4rev1 LOGIN";
+									if (!this.SslIsActive) {
+										capabilities += " STARTTLS";
+									}
+									capabilities += " AUTH=PLAIN";
+									capabilities += " AUTH=CRAM-MD5";
+									this.SendMessage(capabilities, "*");
 									this.SendMessage("OK CAPABILITY completed", this._lastClientId);
 									break;
 								
@@ -138,9 +152,29 @@ namespace eMailServer {
 								case "SELECT":
 									this.Select(clientCommandMatch.Groups[3].Value.ToUpper());
 									break;
+
+								case "LSUB":
+									Match lsubMatch = Regex.Match(clientCommandMatch.Groups[3].Value, "\"([^\"]*)\"\\s+\"([^\"]*)\"", RegexOptions.Compiled);
+									if (lsubMatch.Success) {
+										List<string> folders = this._user.GetFolders(lsubMatch.Groups[1].Value, lsubMatch.Groups[2].Value);
+										foreach(string folder in folders) {
+											this.SendMessage("LSUB () \"/\" \"" + folder + "\"", "*");
+										}
+									}
+									this.SendMessage("OK LSUB completed", this._lastClientId);
+									break;
+								
+								case "LIST":
+									this.List(clientCommandMatch.Groups[3].Value.ToUpper());
+									break;
 								
 								case "STARTTLS":
-									this.SendMessage("OK STARTTLS completed", this._lastClientId);
+									this.SendMessage("OK Begin TLS negotiation now", this._lastClientId);
+									if (this.StartTls()) {
+										this.SendMessage("OK STARTTLS completed", this._lastClientId);
+									} else {
+										this.SendMessage("NO STARTTLS not supported", this._lastClientId);
+									}
 									break;
 								
 								case "UID":
@@ -162,12 +196,12 @@ namespace eMailServer {
 		private void Authenticate(string authenticateMethod) {
 			switch(authenticateMethod) {
 				case "PLAIN":
-					this._state = ImapState.AuthenticatePlain;
+					this._state = State.AuthenticatePlain;
 					this.SendMessage("", "+");
 					break;
 				
 				case "CRAM-MD5":
-					this._state = ImapState.AuthenticateCramMD5;
+					this._state = State.AuthenticateCramMD5;
 					string base64EncodedCramMD5Challenge = this.CalculateOneTimeBase64Challenge("localhost.de");
 					this._currentCramMD5Challenge = Encoding.UTF8.GetString(Convert.FromBase64String(base64EncodedCramMD5Challenge));
 					this.SendMessage(base64EncodedCramMD5Challenge, "+");
@@ -196,6 +230,10 @@ namespace eMailServer {
 		private void Select(string folder) {
 			if (this._user.IsLoggedIn) {
 				switch(folder) {
+					case "TRASH":
+						folder = "TRASH";
+						break;
+
 					case "INBOX":
 					default:
 						folder = "INBOX";
@@ -208,6 +246,13 @@ namespace eMailServer {
 				this.SendMessage("OK [READ] SELECT completed", this._lastClientId);
 			} else {
 				this.SendMessage("BAD login required", this._lastClientId);
+			}
+		}
+
+		private void List(string listString) {
+			Match listMatch = Regex.Match(listString, "\"([^\"]*)\"\\s+\"([^\"]*)\"", RegexOptions.Compiled);
+			if (listMatch.Success) {
+				this.SendMessage("LIST () \"/\" \"" + listMatch.Groups[2].Value.ToUpper() + "\"", "*");
 			}
 		}
 		
@@ -226,8 +271,8 @@ namespace eMailServer {
 								if (uidCommandMatch.Groups[5].Value == String.Empty) {
 									toUid = fromUid;
 								} else if (uidCommandMatch.Groups[5].Value != "*") {
-										toUid = Convert.ToInt32(uidCommandMatch.Groups[5].Value);
-									}
+									toUid = Convert.ToInt32(uidCommandMatch.Groups[5].Value);
+								}
 								List<eMail> emails = this._user.GetEmails(fromUid - 1, toUid - fromUid);
 								int zeroMailCounter = 1;
 								int uidMailCounter = fromUid;

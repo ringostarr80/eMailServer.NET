@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
@@ -11,6 +12,9 @@ using CommandLine;
 using CommandLine.Text;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using MongoDB.Driver.Builders;
+using MongoDB.Driver.Linq;
+
 using NLog;
 using TcpRequestHandler;
 
@@ -48,11 +52,47 @@ namespace eMailServer {
 				Check();
 			}
 			
+			
+			CheckHttpsConnection();
+			CheckIfMailsHaveToBeSend();
+			
 			HttpListener httpListener = null;
 			TcpListener smtpListener = null;
 			TcpListener secureSmtpListener = null;
 			TcpListener imapListener = null;
 			TcpListener secureImapListener = null;
+			
+			if (Options.ServerCertificateFilename != String.Empty) {
+				if (File.Exists(Options.ServerCertificateFilename)) {
+					try {
+						TcpRequestHandler.TcpRequestHandler.SetServerCertificate(Options.ServerCertificateFilename);
+					} catch(Exception ex) {
+						logger.ErrorException("Certificate Exception message: " + ex.Message, ex);
+						LogManager.Configuration = null;
+						return;
+					}
+				} else {
+					logger.Error("Can't find certificate file: " + Options.ServerCertificateFilename);
+					LogManager.Configuration = null;
+					return;
+				}
+			}
+
+			if (Options.ServerKeyFilename != String.Empty) {
+				if (File.Exists(Options.ServerKeyFilename)) {
+					try {
+						TcpRequestHandler.TcpRequestHandler.SetServerKeyFile(Options.ServerKeyFilename);
+					} catch(Exception ex) {
+						logger.ErrorException("Server Key-File Exception message: " + ex.Message, ex);
+						LogManager.Configuration = null;
+						return;
+					}
+				} else {
+					logger.Error("Can't find server key file file: " + Options.ServerKeyFilename);
+					LogManager.Configuration = null;
+					return;
+				}
+			}
 			
 			LimitedConcurrencyLevelTaskScheduler taskScheduler = new LimitedConcurrencyLevelTaskScheduler(500);
 			TaskFactory factory = new TaskFactory(taskScheduler);
@@ -121,13 +161,13 @@ namespace eMailServer {
 				smtpListener = new TcpListener(IPAddress.Any, Options.SmtpPort);
 				secureSmtpListener = new TcpListener(IPAddress.Any, Options.SecureSmtpPort);
 				imapListener = new TcpListener(IPAddress.Any, Options.ImapPort);
-				//secureImapListener = new TcpListener(IPAddress.Any, Options.SecureImapPort);
+				secureImapListener = new TcpListener(IPAddress.Any, Options.SecureImapPort);
 	
 				try {
 					smtpListener.Start();
 					secureSmtpListener.Start();
 					imapListener.Start();
-					//secureImapListener.Start();
+					secureImapListener.Start();
 				} catch(Exception e) {
 					logger.Error("TcpListener: " + e.Message);
 					LogManager.Configuration = null;
@@ -137,7 +177,7 @@ namespace eMailServer {
 				logger.Info("Listening on SMTP-Port " + Options.SmtpPort);
 				logger.Info("Listening on Secure SMTP-Port " + Options.SecureSmtpPort);
 				logger.Info("Listening on IMAP-Port " + Options.ImapPort);
-				//logger.Info("Listening on Secure IMAP-Port " + Options.SecureImapPort);
+				logger.Info("Listening on Secure IMAP-Port " + Options.SecureImapPort);
 
 				Action<object> receiveRequest = (object listener) => {
 					Thread.CurrentThread.CurrentCulture = CultureInfo.CreateSpecificCulture("en-US");
@@ -151,9 +191,9 @@ namespace eMailServer {
 								IPEndPoint endPoint = (IPEndPoint)tcpClient.Client.LocalEndPoint;
 								IRequestHandler handler;
 								if (endPoint.Port != Options.ImapPort && endPoint.Port != Options.SecureImapPort) {
-									handler = new SmtpRequestHandler(tcpClient);
+									handler = new SmtpServer(tcpClient, Options.SecureSmtpPort);
 								} else {
-									handler = new ImapServer(tcpClient);
+									handler = new ImapServer(tcpClient, Options.SecureImapPort);
 								}
 
 								try {
@@ -186,7 +226,7 @@ namespace eMailServer {
 				factory.StartNew(receiveRequest, smtpListener);
 				factory.StartNew(receiveRequest, secureSmtpListener);
 				factory.StartNew(receiveRequest, imapListener);
-				//factory.StartNew(receiveRequest, secureImapListener);
+				factory.StartNew(receiveRequest, secureImapListener);
 			} else {
 				((AutoResetEvent)waitHandles[1]).Set();
 			}
@@ -226,20 +266,67 @@ namespace eMailServer {
 			MongoServer mongoServer = MyMongoDB.GetServer();
 			
 			MongoDatabase mongoDatabase = mongoServer.GetDatabase("email");
-			MongoCollection<eMailEntity> mongoCollection = mongoDatabase.GetCollection<eMailEntity>("mails");
+			MongoCollection<LazyBsonDocument> mongoCollection = mongoDatabase.GetCollection<LazyBsonDocument>("mails");
 			
-			MongoCursor<eMailEntity> mongoCursor = mongoCollection.FindAll();
-			foreach(eMailEntity entity in mongoCursor) {
-				if (User.EMailExists(entity.RecipientTo)) {
-					Console.WriteLine("user with email-address found: " + entity.RecipientTo);
-					User newMailUser = new User();
-					newMailUser.RefreshById(User.GetIdByEMail(entity.RecipientTo));
-					eMail mail = new eMail(entity);
-					mail.AssignToUser(newMailUser);
+			MongoCursor<LazyBsonDocument> mongoCursor = mongoCollection.FindAll();
+			foreach(LazyBsonDocument bsonDocument in mongoCursor) {
+				if (Options.Verbose) {
+					Console.WriteLine("checking email-id: " + bsonDocument["_id"].ToString());
+				}
+				try {
+					if (User.EMailExists(bsonDocument["RecipientTo"].AsString)) {
+						Console.WriteLine("user with email-address found: " + bsonDocument["RecipientTo"].AsString);
+						User newMailUser = new User();
+						newMailUser.RefreshById(User.GetIdByEMail(bsonDocument["RecipientTo"].AsString));
+						eMail mail = new eMail(bsonDocument);
+						mail.AssignToUser(newMailUser);
+					}
+				} catch(Exception ex) {
+					logger.ErrorException(ex.Message, ex);
 				}
 			}
 			
 			Console.WriteLine("precheck finished...");
+		}
+		
+		private static void CheckHttpsConnection() {
+			string httpsUrl = "https://www.gmx.de/";
+			try {
+				WebClient client = new WebClient();
+				client.DownloadString(httpsUrl);
+				logger.Info("test connection to " + httpsUrl + " was successfull.");
+			} catch(WebException exc) {
+				logger.ErrorException("cannot connect to " + httpsUrl, exc);
+			}
+		}
+
+		private static void CheckIfMailsHaveToBeSend() {
+			logger.Info("check if mails have to be sent.");
+
+			MongoServer mongoServer = MyMongoDB.GetServer();
+			MongoDatabase mongoDatabase = mongoServer.GetDatabase("email");
+			MongoCollection<LazyBsonDocument> mongoCollection = mongoDatabase.GetCollection<LazyBsonDocument>("users");
+
+			MongoCursor<LazyBsonDocument> mongoCursor = mongoCollection.FindAll();
+			foreach(LazyBsonDocument bsonDocument in mongoCursor) {
+				if (Options.Verbose) {
+					Console.WriteLine("checking user-id: " + bsonDocument["_id"].ToString() + "; username: " + bsonDocument["Username"].ToString());
+				}
+
+				try {
+					MongoDatabase mongoUserDatabase = mongoServer.GetDatabase("email_user_" + bsonDocument["_id"].ToString());
+					MongoCollection<LazyBsonDocument> mongoUserCollection = mongoUserDatabase.GetCollection<LazyBsonDocument>("mails");
+					MongoCursor<LazyBsonDocument> mongoUserCursor = mongoUserCollection.Find(Query.EQ("Folder", "SENT"));
+					foreach(LazyBsonDocument bsonUserDocument in mongoUserCursor) {
+						Console.WriteLine("found email in SENT-Folder: " + bsonUserDocument["_id"].ToString());
+						eMail userMail = new eMail(bsonUserDocument);
+						userMail.Send();
+						break;
+					}
+				} catch(Exception ex) {
+					logger.ErrorException(ex.Message, ex);
+				}
+			}
 		}
 	}
 }

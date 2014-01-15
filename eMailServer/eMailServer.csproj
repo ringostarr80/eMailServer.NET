@@ -48,6 +48,9 @@
       <HintPath>MongoDB-Driver\MongoDB.Bson.dll</HintPath>
     </Reference>
     <Reference Include="System.Xml" />
+    <Reference Include="Bdev.Net.Dns">
+      <HintPath>..\DnsLookup\Bdev.Net.Dns\bin\Debug\Bdev.Net.Dns.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
@@ -61,9 +64,10 @@
     <Compile Include="Entities\UserEntity.cs" />
     <Compile Include="Entities\eMailEntity.cs" />
     <Compile Include="eMailAddress.cs" />
-    <Compile Include="SmtpRequestHandler.cs" />
     <Compile Include="eMailServer.cs" />
     <Compile Include="ImapServer.cs" />
+    <Compile Include="SmtpServer.cs" />
+    <Compile Include="Entities\eMailFolderEntity.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

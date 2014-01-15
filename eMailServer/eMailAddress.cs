@@ -12,8 +12,7 @@ namespace eMailServer {
 				return this._address;
 			}
 			set {
-				RegexUtilities regexUtility = new RegexUtilities();
-				if (regexUtility.IsValidEmail(value)) {
+				if (eMailAddress.IsValid(value)) {
 					this._address = value;
 				} else {
 					throw new FormatException("invalid eMail address format => \"" + value + "\"");
@@ -28,6 +27,11 @@ namespace eMailServer {
 		public eMailAddress(string name, string address) {
 			this.Name = name;
 			this.Address = address;
+		}
+
+		public static bool IsValid(string address) {
+			RegexUtilities regexUtility = new RegexUtilities();
+			return regexUtility.IsValidEmail(address);
 		}
 	}
 }

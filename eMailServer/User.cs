@@ -310,5 +310,19 @@ namespace eMailServer {
 
 			logger.Info("WriteConcernResult: " + result.Ok);
 		}
+
+		public List<string> GetFolders(string subFolder, string filter) {
+			List<string> folders = new List<string>();
+
+			MongoDatabase mongoDatabase = this._mongoServer.GetDatabase("email_user_" + this._id);
+			MongoCollection<eMailFolderEntity> mongoCollection = mongoDatabase.GetCollection<eMailFolderEntity>("folders");
+
+			MongoCursor<eMailFolderEntity> mongoCursor = mongoCollection.FindAll();
+			foreach(eMailFolderEntity entity in mongoCursor) {
+				folders.Add(entity.Name);
+			}
+
+			return folders;
+		}
 	}
 }
